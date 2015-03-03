@@ -25,7 +25,7 @@ import javax.swing.border.EmptyBorder;
 /** @author Holger Steffan created: 03.03.2015 */
 public class About extends JFrame {
 
-	private URI uri = URI.create("http://mapviewer.hst-soft.de");
+	private URI uri = URI.create("http://www.mapviewer.hst-soft.de");
 
 	private JPanel contentPane;
 
