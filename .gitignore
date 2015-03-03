@@ -15,3 +15,4 @@ images/
 bin/
 config.json
 Saves/
+build/

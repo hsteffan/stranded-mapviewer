@@ -24,6 +24,7 @@ import javax.swing.border.EmptyBorder;
 
 /** @author Holger Steffan created: 03.03.2015 */
 public class About extends JFrame {
+	private static final long serialVersionUID = 6963963067660779906L;
 
 	private URI uri = URI.create("http://www.mapviewer.hst-soft.de");
 

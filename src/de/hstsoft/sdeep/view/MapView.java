@@ -41,7 +41,7 @@ public class MapView extends JPanel {
 	private HashSet<String> doNotDraw = new HashSet<>();
 	private ZoomAndPanListener zoomAndPanListener;
 
-	private boolean showInfo = true;
+	private boolean showInfo = false;
 	private boolean showGrid = true;
 
 	private boolean init = true;
