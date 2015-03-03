@@ -191,7 +191,7 @@ public class MainWindow extends JFrame {
 
 	private void loadConfiguration() {
 		try {
-			File file = new File("config.txt");
+			File file = new File("config.json");
 			configuration = new Configuration(file);
 			if (file.exists()) {
 				configuration.load();
