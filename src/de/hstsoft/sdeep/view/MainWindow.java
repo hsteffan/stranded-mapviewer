@@ -32,7 +32,7 @@ import de.hstsoft.sdeep.util.FileWatcher.FileChangeListener;
 public class MainWindow extends JFrame {
 	private static final long serialVersionUID = -8466802646984355229L;
 
-	private static final String VERSION = "v0.2";
+	public static final String VERSION = "v0.2-alpha";
 
 	private MapView mapView;
 	private FileWatcher fileWatcher;
@@ -54,6 +54,7 @@ public class MainWindow extends JFrame {
 			try {
 				SaveGame parse = new SaveGameParser().parse(file);
 				mapView.setTerrainGeneration(parse.getTerrainGeneration());
+				mapView.repaint();
 			} catch (IOException e) {
 				e.printStackTrace();
 			}
@@ -187,6 +188,23 @@ public class MainWindow extends JFrame {
 		});
 		mnView.add(menuItemResetView);
 
+		JMenu mnInfo = new JMenu("Info");
+		menuBar.add(mnInfo);
+
+		JMenuItem mntmInfo = new JMenuItem("About");
+		mntmInfo.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				showInfo();
+			}
+		});
+		mnInfo.add(mntmInfo);
+
+	}
+
+	private void showInfo() {
+		About about = new About();
+		about.setLocationRelativeTo(this);
+		about.setVisible(true);
 	}
 
 	private void loadConfiguration() {

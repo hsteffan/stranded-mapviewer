@@ -59,7 +59,6 @@ public class MapView extends JPanel {
 
 	public MapView() {
 		super(true);
-		// setOpaque(true);
 
 		this.zoomAndPanListener = new ZoomAndPanListener(this);
 		this.addMouseListener(zoomAndPanListener);
@@ -246,17 +245,24 @@ public class MapView extends JPanel {
 
 		}
 
-		g2.setColor(new Color(0, 0, 0, 150));
-		g2.fillRect(5, 5, 150, 80);
-
-		g2.setColor(Color.WHITE);
-		g2.drawString("width: " + getWidth(), 10, 20);
-		g2.drawString("height: " + getHeight(), 10, 35);
-		g2.drawString("zoomLevel: " + String.format("%d", zoomAndPanListener.getZoomLevel()), 10, 50);
-		g2.drawString("mapPos: " + String.format("%.1f/%.1f", mouseOnMap.getX(), mouseOnMap.getY()), 10, 65);
+		String zoomStr = String.format("zoomLevel: %d", zoomAndPanListener.getZoomLevel());
+		String mapPos = String.format("mapPos: %.1f/%.1f", mouseOnMap.getX(), mouseOnMap.getY());
+		int width = Math.max(fontMetrics.stringWidth(zoomStr), fontMetrics.stringWidth(mapPos));
+		int height = 30;
+		String nodeStr = null;
 		if (hoveredTerrainNode != null) {
-			g2.drawString("node: " + hoveredTerrainNode.getKey(), 10, 80);
+			nodeStr = "node: " + hoveredTerrainNode.getKey();
+			width = Math.max(width, fontMetrics.stringWidth(nodeStr));
+			height += 15;
 		}
+
+		g2.setColor(new Color(0, 0, 0, 150));
+		g2.fillRect(5, 5, width + 10, height + 10);
+		g2.setColor(Color.WHITE);
+		g2.drawString(zoomStr, 10, 20);
+		g2.drawString(mapPos, 10, 35);
+
+		if (nodeStr != null) g2.drawString(nodeStr, 10, 50);
 
 		g2.dispose();
 
