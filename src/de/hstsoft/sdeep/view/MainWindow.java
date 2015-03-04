@@ -52,10 +52,16 @@ public class MainWindow extends JFrame {
 		public void onFileChanged(File file) {
 
 			try {
+				// TODO get rid of the sleep. queue a task or something and ignore multiple parse requests if one
+				// request is in the queue.
+				Thread.sleep(250);
 				SaveGame parse = new SaveGameParser().parse(file);
 				mapView.setTerrainGeneration(parse.getTerrainGeneration());
 				mapView.repaint();
 			} catch (IOException e) {
+				e.printStackTrace();
+			} catch (InterruptedException e) {
+				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
 		}
@@ -88,8 +94,9 @@ public class MainWindow extends JFrame {
 		}
 		try {
 			SaveGame saveGame = new SaveGameParser().parse(file);
-			mapView.setTerrainGeneration(saveGame.getTerrainGeneration());
+			mapView.setTerrainGeneration(saveGame.getTerrainGeneration(), true);
 			configuration.setSaveGamePath(saveGame.getPath());
+			toggleAutoRefresh(configuration.isAutorefresh());
 		} catch (IOException e) {
 			e.printStackTrace();
 		}

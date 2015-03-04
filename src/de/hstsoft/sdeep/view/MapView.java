@@ -140,6 +140,8 @@ public class MapView extends JPanel {
 
 	}
 
+	private AffineTransform identity = new AffineTransform();
+
 	@Override
 	protected void paintComponent(Graphics g) {
 		super.paintComponent(g);
@@ -153,10 +155,9 @@ public class MapView extends JPanel {
 		g2.setColor(new Color(105, 155, 195));
 		g2.fillRect(0, 0, getWidth(), getHeight());
 
-		AffineTransform defaultTransform = g2.getTransform();
-
 		if (init) {
 			// Initialize the viewport by moving the origin to the center of the window.
+			System.out.println("W:" + getWidth() + " H:" + getHeight());
 			init = false;
 			final int xc = getWidth() / 2;
 			final int yc = getHeight() / 2;
@@ -169,6 +170,14 @@ public class MapView extends JPanel {
 			affineTransform.scale(-1, 1);
 			affineTransform.rotate(rotation);
 
+			if (terrainGeneration != null) {
+				Position worldOrigin = terrainGeneration.getWorldOrigin();
+				Position playerPosition = terrainGeneration.getPlayerPosition();
+				final int playerX = (int) (worldOrigin.x - playerPosition.x);
+				final int playerZ = (int) (worldOrigin.z - playerPosition.z);
+				Point2D playerOnScreen = new Point2D.Float(playerX, playerZ);
+				affineTransform.translate(-playerOnScreen.getX(), -playerOnScreen.getY());
+			}
 			// Save the viewport to be updated by the ZoomAndPanListener
 			zoomAndPanListener.setCoordTransform(affineTransform);
 		}
@@ -199,7 +208,7 @@ public class MapView extends JPanel {
 			g2.fillOval(playerX - 3, playerZ - 3, 6, 6);
 
 		}
-		g2.setTransform(defaultTransform);
+		g2.setTransform(identity);
 		AffineTransform transform = g2.getTransform();
 
 		// drawCompass
@@ -217,7 +226,7 @@ public class MapView extends JPanel {
 				RenderingHints.VALUE_INTERPOLATION_NEAREST_NEIGHBOR));
 
 		// set the default transform to draw the popup and stuff
-		g2.setTransform(defaultTransform);
+		g2.setTransform(identity);
 		if (popup != null) {
 			g2.setColor(new Color(0, 0, 0, 150));
 			g2.fill(popup.bounds);
@@ -452,24 +461,6 @@ public class MapView extends JPanel {
 					repaint();
 				}
 
-				// if (!objects.isEmpty()) {
-				// popup = new InfoWindow();
-				// popup.lines = new String[objects.size()];
-				// final int lineHeight = fontMetrics.getHeight();
-				// final int totalHeight = (lineHeight) * objects.size();
-				// int width = 0;
-				// for (int i = 0; i < objects.size(); i++) {
-				// GameObject gameObject = objects.get(i);
-				// popup.lines[i] = gameObject.getType();
-				// width = Math.max(width, fontMetrics.stringWidth(popup.lines[i]));
-				// }
-				//
-				// Arrays.sort(popup.lines);
-				// Rectangle infoBounds = new Rectangle(mousePosition.x - width - 15, mousePosition.y - totalHeight - 5,
-				// width + 10, totalHeight + 5);
-				// popup.bounds = infoBounds;
-				// repaint();
-				// }
 			}
 			repaint();
 		}
@@ -480,10 +471,16 @@ public class MapView extends JPanel {
 		private String[] lines;
 	}
 
-	/** @param terrainGeneration */
 	public void setTerrainGeneration(TerrainGeneration terrainGeneration) {
+		setTerrainGeneration(terrainGeneration, false);
+	}
+
+	public void setTerrainGeneration(TerrainGeneration terrainGeneration, boolean resetView) {
 		this.terrainGeneration = terrainGeneration;
-		// resetView();
+		if (resetView)
+			resetView();
+		else
+			paintImmediately(0, 0, getWidth(), getHeight());
 	}
 
 	public boolean isShowInfo() {
@@ -512,6 +509,16 @@ public class MapView extends JPanel {
 		affineTransform.translate(xc, yc);
 		affineTransform.scale(-1, 1);
 		affineTransform.rotate(Math.toRadians(45));
+
+		if (terrainGeneration != null) {
+			Position worldOrigin = terrainGeneration.getWorldOrigin();
+			Position playerPosition = terrainGeneration.getPlayerPosition();
+			final int playerX = (int) (worldOrigin.x - playerPosition.x);
+			final int playerZ = (int) (worldOrigin.z - playerPosition.z);
+			Point2D playerOnScreen = new Point2D.Float(playerX, playerZ);
+			affineTransform.translate(-playerOnScreen.getX(), -playerOnScreen.getY());
+		}
+		zoomAndPanListener.setZoomLevel(0);
 		zoomAndPanListener.setCoordTransform(affineTransform);
 		repaint();
 	}
