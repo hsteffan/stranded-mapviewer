@@ -32,7 +32,7 @@ import de.hstsoft.sdeep.util.FileWatcher.FileChangeListener;
 public class MainWindow extends JFrame {
 	private static final long serialVersionUID = -8466802646984355229L;
 
-	public static final String VERSION = "v0.2-alpha";
+	public static final String VERSION = "v0.3-alpha";
 
 	private MapView mapView;
 	private FileWatcher fileWatcher;

@@ -8,6 +8,7 @@ import java.awt.Color;
 import java.awt.FontMetrics;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
+import java.awt.Image;
 import java.awt.Point;
 import java.awt.Rectangle;
 import java.awt.RenderingHints;
@@ -23,6 +24,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map.Entry;
+import java.util.concurrent.ConcurrentHashMap;
 
 import javax.imageio.ImageIO;
 import javax.swing.JPanel;
@@ -33,10 +35,14 @@ import de.hstsoft.sdeep.model.TerrainGeneration;
 import de.hstsoft.sdeep.model.TerrainNode;
 
 /** @author Holger Steffan created: 26.02.2015 */
-public class MapView extends JPanel {
+public class MapView extends JPanel implements IslandLoadListener {
 	private static final long serialVersionUID = -7556622085501030441L;
 
 	private TerrainGeneration terrainGeneration;
+	private IslandShapeGenerationManager islandShapeGenerationManager;
+
+	private ConcurrentHashMap<String, Image> islandShapes = new ConcurrentHashMap<>();
+
 	private HashMap<String, BufferedImage> images = new HashMap<>();
 	private HashSet<String> doNotDraw = new HashSet<>();
 	private ZoomAndPanListener zoomAndPanListener;
@@ -57,6 +63,8 @@ public class MapView extends JPanel {
 
 	private double rotation = Math.toRadians(45);
 
+	private AffineTransform identity = new AffineTransform();
+
 	public MapView() {
 		super(true);
 
@@ -65,6 +73,8 @@ public class MapView extends JPanel {
 		this.addMouseMotionListener(zoomAndPanListener);
 		this.addMouseWheelListener(zoomAndPanListener);
 		this.addMouseMotionListener(new MouseMotionListener());
+
+		islandShapeGenerationManager = new IslandShapeGenerationManager(this);
 
 		try {
 			// TODO move mapping to config file for modding maybe? ;)
@@ -140,8 +150,6 @@ public class MapView extends JPanel {
 
 	}
 
-	private AffineTransform identity = new AffineTransform();
-
 	@Override
 	protected void paintComponent(Graphics g) {
 		super.paintComponent(g);
@@ -162,8 +170,6 @@ public class MapView extends JPanel {
 			final int xc = getWidth() / 2;
 			final int yc = getHeight() / 2;
 			fontMetrics = g2.getFontMetrics();
-
-			// TODO move the Viewport to the player position.
 
 			AffineTransform affineTransform = new AffineTransform();
 			affineTransform.translate(xc, yc);
@@ -283,43 +289,32 @@ public class MapView extends JPanel {
 
 			Position positionOffset = terrainNode.getPositionOffset();
 
-			final float nodeWorldX = positionOffset.x;
-			final float nodeWorldZ = positionOffset.z;
+			final int nodeWorldX = (int) positionOffset.x;
+			final int nodeWorldZ = (int) positionOffset.z;
 
 			if (showGrid) {
 				g2.setColor(Color.GRAY);
-				g2.drawRect(-128 + (int) nodeWorldX, -128 + (int) nodeWorldZ, 256, 256);
+				g2.drawRect(nodeWorldX - 128, nodeWorldZ - 128, 256, 256);
 			}
 
-			// no need to iterate through children
+			// no need to draw anything
 			if (!terrainNode.getBiome().equals("ISLAND")) continue;
 
 			// draw undiscovered island an image
-			if (!terrainNode.isFullyGernerated()) {
+			if (terrainNode.isFullyGernerated() && islandShapes.containsKey(terrainNode.getName())) {
+				// island shape was created previously so we can draw it
+				Image img = islandShapes.get(terrainNode.getName());
+				g2.drawImage(img, nodeWorldX - 128, nodeWorldZ - 128, null);
+			} else {
+				// the shape has to be created, loaded or island is undiscovered. draw a place holder instead.
+				AffineTransform originalTransform = g2.getTransform();
 				t.setToIdentity();
 				t.translate(nodeWorldX, nodeWorldZ);
 				t.rotate(-rotation);
 				t.scale(-1, 1);
 				g2.transform(t);
 				g2.drawImage(images.get("ISLAND_UNDISCOVERED"), -64, -64, null);
-				try {
-					g2.transform(t.createInverse());
-				} catch (NoninvertibleTransformException e) {
-					e.printStackTrace();
-				}
-			}
-
-			// iterate over all children to determine the bounds of the island
-			ArrayList<GameObject> children = terrainNode.getChildren();
-			for (GameObject gameObject : children) {
-				String name = gameObject.getType();
-				if (name.contains("ROCK") || name.contains("PALM_TREE") || name.contains("STICK")
-						|| name.contains("POTATO_PLANT") || name.contains("YUCCA")) {
-					Position localPosition = gameObject.getLocalPosition();
-					final int worldX = (int) (nodeWorldX - localPosition.x);
-					final int worldZ = (int) (nodeWorldZ - localPosition.z);
-					g2.drawImage(images.get("ISLAND"), worldX - 20, worldZ - 20, null);
-				}
+				g2.setTransform(originalTransform);
 			}
 		}
 	}
@@ -343,6 +338,7 @@ public class MapView extends JPanel {
 				final int worldX = (int) (nodeWorldX - localPosition.x);
 				final int worldZ = (int) (nodeWorldZ - localPosition.z);
 
+				AffineTransform originalTransform = g2.getTransform();
 				// rotate the the canvas back to draw the object images aligned with the x-axis
 				t.setToIdentity();
 				t.translate(worldX, worldZ);
@@ -358,11 +354,7 @@ public class MapView extends JPanel {
 					g2.fillOval(-2, -2, 4, 4);
 				}
 
-				try {
-					g2.transform(t.createInverse());
-				} catch (NoninvertibleTransformException e) {
-					e.printStackTrace();
-				}
+				g2.setTransform(originalTransform);
 			}
 
 			if (showInfo) {
@@ -372,6 +364,7 @@ public class MapView extends JPanel {
 				final int left = (int) nodeWorldX - 128;
 				final int top = (int) nodeWorldZ - 128;
 
+				AffineTransform originalTransform = g2.getTransform();
 				t.setToIdentity();
 				t.translate(left, top);
 				t.rotate(-rotation);
@@ -385,11 +378,7 @@ public class MapView extends JPanel {
 				g2.drawString("off: " + positionOffset.x + "/" + positionOffset.z, -20, 90);
 				g2.drawString("seed: " + terrainNode.getSeedEffect(), -20, 105);
 
-				try {
-					g2.transform(t.createInverse());
-				} catch (NoninvertibleTransformException e) {
-					e.printStackTrace();
-				}
+				g2.setTransform(originalTransform);
 			}
 		}
 	}
@@ -477,6 +466,17 @@ public class MapView extends JPanel {
 
 	public void setTerrainGeneration(TerrainGeneration terrainGeneration, boolean resetView) {
 		this.terrainGeneration = terrainGeneration;
+
+		String directory = "worlds/" + terrainGeneration.getWorldSeed() + "/";
+
+		// load or generate island shapes
+		for (TerrainNode node : terrainGeneration.getTerrainNodes()) {
+			if (!node.getBiome().equals("ISLAND")) continue;
+			if (node.isFullyGernerated()) {
+				islandShapeGenerationManager.enqueue(new IslandShapeGenerationTask(node, directory));
+			}
+		}
+
 		if (resetView)
 			resetView();
 		else
@@ -521,6 +521,12 @@ public class MapView extends JPanel {
 		zoomAndPanListener.setZoomLevel(0);
 		zoomAndPanListener.setCoordTransform(affineTransform);
 		repaint();
+	}
+
+	@Override
+	public void onIslandLoaded(TerrainNode node, BufferedImage islandShape) {
+		islandShapes.put(node.getName(), islandShape);
+		paintImmediately(0, 0, getWidth(), getHeight());
 	}
 
 }
