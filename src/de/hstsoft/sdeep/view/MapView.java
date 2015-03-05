@@ -289,19 +289,24 @@ public class MapView extends JPanel implements IslandLoadListener {
 
 			Position positionOffset = terrainNode.getPositionOffset();
 
-			final float nodeWorldX = positionOffset.x;
-			final float nodeWorldZ = positionOffset.z;
+			final int nodeWorldX = (int) positionOffset.x;
+			final int nodeWorldZ = (int) positionOffset.z;
 
 			if (showGrid) {
 				g2.setColor(Color.GRAY);
-				g2.drawRect(-128 + (int) nodeWorldX, -128 + (int) nodeWorldZ, 256, 256);
+				g2.drawRect(nodeWorldX - 128, nodeWorldZ - 128, 256, 256);
 			}
 
-			// no need to iterate through children
+			// no need to draw anything
 			if (!terrainNode.getBiome().equals("ISLAND")) continue;
 
 			// draw undiscovered island an image
-			if (!terrainNode.isFullyGernerated()) {
+			if (terrainNode.isFullyGernerated() && islandShapes.containsKey(terrainNode.getName())) {
+				// island shape was created previously so we can draw it
+				Image img = islandShapes.get(terrainNode.getName());
+				g2.drawImage(img, nodeWorldX - 128, nodeWorldZ - 128, null);
+			} else {
+				// the shape has to be created, loaded or island is undiscovered. draw a place holder instead.
 				AffineTransform originalTransform = g2.getTransform();
 				t.setToIdentity();
 				t.translate(nodeWorldX, nodeWorldZ);
@@ -310,17 +315,7 @@ public class MapView extends JPanel implements IslandLoadListener {
 				g2.transform(t);
 				g2.drawImage(images.get("ISLAND_UNDISCOVERED"), -64, -64, null);
 				g2.setTransform(originalTransform);
-			} else {
-				if (islandShapes.containsKey(terrainNode.getName())) {
-					// island shape was created previously so we can draw it
-					Image img = islandShapes.get(terrainNode.getName());
-					g2.drawImage(img, (int) nodeWorldX - 128, (int) nodeWorldZ - 128, null);
-				} else {
-					// the shape has to be created or loaded draw a place holder instead.
-					g2.drawImage(images.get("ISLAND_UNDISCOVERED"), (int) nodeWorldX - 64, (int) nodeWorldZ - 64, null);
-				}
 			}
-
 		}
 	}
 
@@ -472,6 +467,7 @@ public class MapView extends JPanel implements IslandLoadListener {
 	public void setTerrainGeneration(TerrainGeneration terrainGeneration, boolean resetView) {
 		this.terrainGeneration = terrainGeneration;
 
+		// load or generate island shapes
 		for (TerrainNode node : terrainGeneration.getTerrainNodes()) {
 			if (!node.getBiome().equals("ISLAND")) continue;
 			if (node.isFullyGernerated()) {
@@ -528,7 +524,7 @@ public class MapView extends JPanel implements IslandLoadListener {
 	@Override
 	public void onIslandLoaded(TerrainNode node, BufferedImage islandShape) {
 		islandShapes.put(node.getName(), islandShape);
-		repaint();
+		paintImmediately(0, 0, getWidth(), getHeight());
 	}
 
 }
