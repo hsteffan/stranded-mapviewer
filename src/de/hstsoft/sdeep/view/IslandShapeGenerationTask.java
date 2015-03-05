@@ -1,11 +1,7 @@
-/**
- * Copyright © 2015 Holger Steffan
- * H.St. Soft
- *
- * This file is subject to the terms and conditions defined in
- * file 'license', which is part of this source code package.
- *
- */
+/** Copyright © 2015 Holger Steffan H.St. Soft
+ * 
+ * This file is subject to the terms and conditions defined in file 'license', which is part of this source code
+ * package. */
 package de.hstsoft.sdeep.view;
 
 import java.awt.Graphics2D;
@@ -23,9 +19,11 @@ import de.hstsoft.sdeep.model.TerrainNode;
 public class IslandShapeGenerationTask {
 
 	private TerrainNode node;
+	private String searchpath;
 
-	public IslandShapeGenerationTask(TerrainNode node) {
+	public IslandShapeGenerationTask(TerrainNode node, String searchpath) {
 		this.node = node;
+		this.searchpath = searchpath;
 	}
 
 	public TerrainNode getNode() {
@@ -34,12 +32,16 @@ public class IslandShapeGenerationTask {
 
 	public BufferedImage execute() throws IOException {
 
-		File file = new File(node.getName() + ".png");
+		File directory = new File(searchpath);
+		if (!directory.exists()) {
+			directory.mkdirs();
+		}
+
+		File file = new File(searchpath + node.getName() + ".png");
 		BufferedImage image = null;
 		if (file.exists()) {
 			System.out.println("Loading shape for " + node.getName());
 			image = ImageIO.read(file);
-
 		} else {
 			System.out.println("Generating shape for " + node.getName());
 			image = new BufferedImage(256, 256, BufferedImage.TYPE_INT_ARGB);
@@ -60,16 +62,9 @@ public class IslandShapeGenerationTask {
 				}
 			}
 
-			saveImage(node, image);
+			ImageIO.write(image, "PNG", file);
 		}
 		return image;
-	}
-
-	private void saveImage(TerrainNode node, BufferedImage nodeImage) throws IOException {
-
-		File output = new File(node.getName() + ".png");
-		ImageIO.write(nodeImage, "PNG", output);
-
 	}
 
 	@Override

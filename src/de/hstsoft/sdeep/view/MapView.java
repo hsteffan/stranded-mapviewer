@@ -467,11 +467,13 @@ public class MapView extends JPanel implements IslandLoadListener {
 	public void setTerrainGeneration(TerrainGeneration terrainGeneration, boolean resetView) {
 		this.terrainGeneration = terrainGeneration;
 
+		String directory = "worlds/" + terrainGeneration.getWorldSeed() + "/";
+
 		// load or generate island shapes
 		for (TerrainNode node : terrainGeneration.getTerrainNodes()) {
 			if (!node.getBiome().equals("ISLAND")) continue;
 			if (node.isFullyGernerated()) {
-				islandShapeGenerationManager.enqueue(new IslandShapeGenerationTask(node));
+				islandShapeGenerationManager.enqueue(new IslandShapeGenerationTask(node, directory));
 			}
 		}
 
