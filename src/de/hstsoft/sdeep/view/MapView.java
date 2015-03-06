@@ -107,6 +107,7 @@ public class MapView extends JPanel implements IslandLoadListener {
 			BufferedImage coconut = ImageIO.read(getClass().getResource("/de/hstsoft/sdeep/res/coconut.png"));
 			images.put("COCONUT_GREEN", coconut);
 			images.put("COCONUT_ORANGE", coconut);
+			images.put("COCONUT_DRINKABLE", coconut);
 
 			images.put("HARDCASE_1", ImageIO.read(getClass().getResource("/de/hstsoft/sdeep/res/hard_case.png")));
 			images.put("TOOLBOX_1", ImageIO.read(getClass().getResource("/de/hstsoft/sdeep/res/toolbox.png")));
@@ -134,8 +135,10 @@ public class MapView extends JPanel implements IslandLoadListener {
 
 			images.put("RAFT_V1", ImageIO.read(getClass().getResource("/de/hstsoft/sdeep/res/raft_v1.png")));
 
+			images.put("FIRE", ImageIO.read(getClass().getResource("/de/hstsoft/sdeep/res/fire_place.png")));
 			images.put("ROCK_SHARD", ImageIO.read(getClass().getResource("/de/hstsoft/sdeep/res/rock_shard.png")));
 			images.put("PALM_FROND", ImageIO.read(getClass().getResource("/de/hstsoft/sdeep/res/palm_frond.png")));
+			images.put("DUCTTAPE", ImageIO.read(getClass().getResource("/de/hstsoft/sdeep/res/ducttape.png")));
 
 			images.put("FOUNDATION", ImageIO.read(getClass().getResource("/de/hstsoft/sdeep/res/foundation.png")));
 			images.put("FOUNDATION_ROOF", ImageIO.read(getClass().getResource("/de/hstsoft/sdeep/res/foundation_roof.png")));
