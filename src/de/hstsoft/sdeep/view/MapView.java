@@ -121,6 +121,8 @@ public class MapView extends JPanel implements IslandLoadListener {
 
 			images.put("PLANEWRECK", ImageIO.read(getClass().getResource("/de/hstsoft/sdeep/res/plane_wreck.png")));
 
+			images.put("RowBoat_3", ImageIO.read(getClass().getResource("/de/hstsoft/sdeep/res/row_boat.png")));
+
 			BufferedImage ship_wreck = ImageIO.read(getClass().getResource("/de/hstsoft/sdeep/res/ship_wreck.png"));
 			images.put("SHIPWRECK_1A", ship_wreck);
 			images.put("SHIPWRECK_2A", ship_wreck);
@@ -130,7 +132,14 @@ public class MapView extends JPanel implements IslandLoadListener {
 			images.put("SHIPWRECK_6A", ship_wreck);
 			images.put("SHIPWRECK_7A", ship_wreck);
 
-			// WHALE; MARLIN;
+			images.put("RAFT_V1", ImageIO.read(getClass().getResource("/de/hstsoft/sdeep/res/raft_v1.png")));
+
+			images.put("ROCK_SHARD", ImageIO.read(getClass().getResource("/de/hstsoft/sdeep/res/rock_shard.png")));
+			images.put("PALM_FROND", ImageIO.read(getClass().getResource("/de/hstsoft/sdeep/res/palm_frond.png")));
+
+			images.put("FOUNDATION", ImageIO.read(getClass().getResource("/de/hstsoft/sdeep/res/foundation.png")));
+			images.put("FOUNDATION_ROOF", ImageIO.read(getClass().getResource("/de/hstsoft/sdeep/res/foundation_roof.png")));
+			images.put("FOUNDATION_SUPPORT", ImageIO.read(getClass().getResource("/de/hstsoft/sdeep/res/foundation_support.png")));
 
 		} catch (IOException e) {
 			e.printStackTrace();
