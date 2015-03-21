@@ -5,6 +5,7 @@
 package de.hstsoft.sdeep.model;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.Map;
 
@@ -123,7 +124,7 @@ public class TerrainNode {
 				terrainNode.children.add(child);
 			}
 		}
-
+		Collections.sort(terrainNode.children, new GameObjectComparator());
 		return terrainNode;
 	}
 }

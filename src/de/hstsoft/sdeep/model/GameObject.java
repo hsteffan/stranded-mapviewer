@@ -6,6 +6,8 @@ package de.hstsoft.sdeep.model;
 
 import org.json.simple.JSONObject;
 
+import de.hstsoft.sdeep.ItemTypes;
+
 /** @author Holger Steffan created: 03.03.2015 */
 public class GameObject {
 
@@ -16,6 +18,7 @@ public class GameObject {
 	private String displayName;
 	private String name;
 	private String type;
+	int order = Integer.MAX_VALUE;
 
 	private Position localPosition;
 
@@ -40,6 +43,18 @@ public class GameObject {
 
 		gameObject.name = json.get(NAME).toString();
 		gameObject.type = gameObject.name.substring(0, gameObject.name.indexOf("("));
+
+		if (gameObject.type.equals(ItemTypes.SEA_FORT_1) || gameObject.type.equals(ItemTypes.SEA_FORT_2)
+				|| gameObject.type.equals(ItemTypes.SEA_FORT_3)) {
+			gameObject.order = 0;
+		}
+
+		if (gameObject.type.equals(ItemTypes.PALM_TREE) || gameObject.type.equals(ItemTypes.PALM_TREE_1)
+				|| gameObject.type.equals(ItemTypes.PALM_TREE_2) || gameObject.type.equals(ItemTypes.PALM_TREE_3)
+				|| gameObject.type.equals(ItemTypes.PALM_TREE_4)) {
+			gameObject.order = 0;
+		}
+
 		// retVal.displayName = json.get("displayName").toString();
 
 		JSONObject transform = (JSONObject) json.get(TRANSFORM);

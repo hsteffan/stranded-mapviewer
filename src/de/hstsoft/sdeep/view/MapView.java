@@ -26,9 +26,9 @@ import java.util.HashSet;
 import java.util.Map.Entry;
 import java.util.concurrent.ConcurrentHashMap;
 
-import javax.imageio.ImageIO;
 import javax.swing.JPanel;
 
+import de.hstsoft.sdeep.ItemTypes;
 import de.hstsoft.sdeep.model.GameObject;
 import de.hstsoft.sdeep.model.Position;
 import de.hstsoft.sdeep.model.TerrainGeneration;
@@ -43,7 +43,7 @@ public class MapView extends JPanel implements IslandLoadListener {
 
 	private ConcurrentHashMap<String, Image> islandShapes = new ConcurrentHashMap<>();
 
-	private HashMap<String, BufferedImage> images = new HashMap<>();
+	private HashMap<String, ItemImage> images = new HashMap<>();
 	private HashSet<String> doNotDraw = new HashSet<>();
 	private ZoomAndPanListener zoomAndPanListener;
 
@@ -65,6 +65,19 @@ public class MapView extends JPanel implements IslandLoadListener {
 
 	private AffineTransform identity = new AffineTransform();
 
+	public static class ImageFactory {
+
+		public static ItemImage createImage(String itemPath, int width, int height) throws IOException {
+			return createImage(itemPath, width, height, true);
+		}
+
+		public static ItemImage createImage(String itemPath, int width, int height, boolean axisAligned) throws IOException {
+			ItemImage itemImage = new ItemImage(axisAligned);
+			itemImage.load(itemPath, width, height);
+			return itemImage;
+		}
+	}
+
 	public MapView() {
 		super(true);
 
@@ -78,115 +91,116 @@ public class MapView extends JPanel implements IslandLoadListener {
 
 		try {
 			// TODO move mapping to config file for modding maybe? ;)
-			images.put("COMPASS_RING", ImageIO.read(getClass().getResource("/de/hstsoft/sdeep/res/compass_ring.png")));
-			images.put("COMPASS_NEEDLE", ImageIO.read(getClass().getResource("/de/hstsoft/sdeep/res/compass_needle.png")));
+			images.put("COMPASS_RING", ImageFactory.createImage("/de/hstsoft/sdeep/res/compass_ring.png", 140, 140));
+			images.put("COMPASS_NEEDLE", ImageFactory.createImage("/de/hstsoft/sdeep/res/compass_needle.png", 140, 140));
 
-			images.put("ISLAND", ImageIO.read(getClass().getResource("/de/hstsoft/sdeep/res/island.png")));
-			images.put("ISLAND_UNDISCOVERED",
-					ImageIO.read(getClass().getResource("/de/hstsoft/sdeep/res/island_undiscovered.png")));
+			images.put("ISLAND", ImageFactory.createImage("/de/hstsoft/sdeep/res/island.png", 256, 256));
+			images.put("ISLAND_UNDISCOVERED", ImageFactory.createImage("/de/hstsoft/sdeep/res/island_undiscovered.png", 128, 128));
 
-			images.put("SHARK - TIGER", ImageIO.read(getClass().getResource("/de/hstsoft/sdeep/res/shark_tiger.png")));
-			images.put("SHARK - REEF", ImageIO.read(getClass().getResource("/de/hstsoft/sdeep/res/shark_reef.png")));
-			images.put("SHARK - GREAT WHITE", ImageIO.read(getClass().getResource("/de/hstsoft/sdeep/res/great_white.png")));
-			images.put("MARLIN", ImageIO.read(getClass().getResource("/de/hstsoft/sdeep/res/marlin.png")));
-			images.put("GREEN_SEA_TURTLE", ImageIO.read(getClass().getResource("/de/hstsoft/sdeep/res/turtle.png")));
-			images.put("STING_RAY", ImageIO.read(getClass().getResource("/de/hstsoft/sdeep/res/sting_ray.png")));
-			images.put("WHALE", ImageIO.read(getClass().getResource("/de/hstsoft/sdeep/res/whale.png")));
+			images.put(ItemTypes.SHARK_TIGER, ImageFactory.createImage("/de/hstsoft/sdeep/res/shark_tiger.png", 8, 8));
+			images.put(ItemTypes.SHARK_REEF, ImageFactory.createImage("/de/hstsoft/sdeep/res/shark_reef.png", 8, 8));
+			images.put(ItemTypes.SHARK_WHITE, ImageFactory.createImage("/de/hstsoft/sdeep/res/great_white.png", 8, 8));
+			images.put(ItemTypes.MARLIN, ImageFactory.createImage("/de/hstsoft/sdeep/res/marlin.png", 8, 8));
+			images.put(ItemTypes.GREEN_SEA_TURTLE, ImageFactory.createImage("/de/hstsoft/sdeep/res/turtle.png", 8, 8));
+			images.put(ItemTypes.STING_RAY, ImageFactory.createImage("/de/hstsoft/sdeep/res/sting_ray.png", 8, 8));
+			images.put(ItemTypes.WHALE, ImageFactory.createImage("/de/hstsoft/sdeep/res/whale.png", 8, 8));
 
-			images.put("PALM_TREE", ImageIO.read(getClass().getResource("/de/hstsoft/sdeep/res/palm_tree.png")));
-			images.put("PALM_TREE_1", ImageIO.read(getClass().getResource("/de/hstsoft/sdeep/res/palm_tree.png")));
-			images.put("PALM_TREE_2", ImageIO.read(getClass().getResource("/de/hstsoft/sdeep/res/palm_tree.png")));
-			images.put("PALM_TREE_3", ImageIO.read(getClass().getResource("/de/hstsoft/sdeep/res/palm_tree.png")));
-			images.put("PALM_TREE_4", ImageIO.read(getClass().getResource("/de/hstsoft/sdeep/res/palm_tree.png")));
+			ItemImage palm = ImageFactory.createImage("/de/hstsoft/sdeep/res/palm_tree.png", 20, 20, false);
+			images.put(ItemTypes.PALM_TREE, palm);
+			images.put(ItemTypes.PALM_TREE_1, palm);
+			images.put(ItemTypes.PALM_TREE_2, palm);
+			images.put(ItemTypes.PALM_TREE_3, palm);
+			images.put(ItemTypes.PALM_TREE_4, palm);
 
-			images.put("ROCK", ImageIO.read(getClass().getResource("/de/hstsoft/sdeep/res/rock.png")));
-			images.put("STICK", ImageIO.read(getClass().getResource("/de/hstsoft/sdeep/res/stick.png")));
-			images.put("YUCCA", ImageIO.read(getClass().getResource("/de/hstsoft/sdeep/res/yucca.png")));
-			images.put("POTATO_PLANT", ImageIO.read(getClass().getResource("/de/hstsoft/sdeep/res/potato.png")));
-			images.put("CRAB_HOME", ImageIO.read(getClass().getResource("/de/hstsoft/sdeep/res/crap.png")));
-			BufferedImage coconut = ImageIO.read(getClass().getResource("/de/hstsoft/sdeep/res/coconut.png"));
-			images.put("COCONUT_GREEN", coconut);
-			images.put("COCONUT_ORANGE", coconut);
-			images.put("COCONUT_DRINKABLE", coconut);
+			images.put(ItemTypes.ROCK, ImageFactory.createImage("/de/hstsoft/sdeep/res/rock.png", 8, 8));
+			images.put(ItemTypes.STICK, ImageFactory.createImage("/de/hstsoft/sdeep/res/stick.png", 8, 8));
+			images.put(ItemTypes.YUCCA, ImageFactory.createImage("/de/hstsoft/sdeep/res/yucca.png", 8, 8));
+			images.put(ItemTypes.POTATO_PLANT, ImageFactory.createImage("/de/hstsoft/sdeep/res/potato.png", 8, 8));
+			images.put(ItemTypes.CRAB_HOME, ImageFactory.createImage("/de/hstsoft/sdeep/res/crap.png", 8, 8));
+			ItemImage coconut = ImageFactory.createImage("/de/hstsoft/sdeep/res/coconut.png", 8, 8);
+			images.put(ItemTypes.COCONUT_GREEN, coconut);
+			images.put(ItemTypes.COCONUT_ORANGE, coconut);
+			images.put(ItemTypes.COCONUT_DRINKABLE, coconut);
 
-			images.put("HARDCASE_1", ImageIO.read(getClass().getResource("/de/hstsoft/sdeep/res/hard_case.png")));
-			images.put("TOOLBOX_1", ImageIO.read(getClass().getResource("/de/hstsoft/sdeep/res/toolbox.png")));
+			images.put(ItemTypes.HARDCASE_1, ImageFactory.createImage("/de/hstsoft/sdeep/res/hard_case.png", 8, 8));
+			images.put(ItemTypes.TOOLBOX_1, ImageFactory.createImage("/de/hstsoft/sdeep/res/toolbox.png", 8, 8));
 
-			BufferedImage locker = ImageIO.read(getClass().getResource("/de/hstsoft/sdeep/res/locker.png"));
-			images.put("LOCKER_1", locker);
-			images.put("LOCKER_2", locker);
-			images.put("LOCKER_3", locker);
-			images.put("LOCKER_4", locker);
+			ItemImage locker = ImageFactory.createImage("/de/hstsoft/sdeep/res/locker.png", 8, 8);
+			images.put(ItemTypes.LOCKER_1, locker);
+			images.put(ItemTypes.LOCKER_2, locker);
+			images.put(ItemTypes.LOCKER_3, locker);
+			images.put(ItemTypes.LOCKER_4, locker);
 
-			BufferedImage door = ImageIO.read(getClass().getResource("/de/hstsoft/sdeep/res/door.png"));
-			images.put("DOOR_1", door);
-			images.put("DOOR_2", door);
+			ItemImage door = ImageFactory.createImage("/de/hstsoft/sdeep/res/door.png", 8, 8);
+			images.put(ItemTypes.DOOR_1, door);
+			images.put(ItemTypes.DOOR_2, door);
 
-			images.put("PLANEWRECK", ImageIO.read(getClass().getResource("/de/hstsoft/sdeep/res/plane_wreck.png")));
+			images.put(ItemTypes.PLANEWRECK, ImageFactory.createImage("/de/hstsoft/sdeep/res/plane_wreck.png", 8, 8));
 
-			images.put("RowBoat_3", ImageIO.read(getClass().getResource("/de/hstsoft/sdeep/res/row_boat.png")));
+			images.put(ItemTypes.ROWBOAT_3, ImageFactory.createImage("/de/hstsoft/sdeep/res/row_boat.png", 8, 8));
 
-			BufferedImage ship_wreck = ImageIO.read(getClass().getResource("/de/hstsoft/sdeep/res/ship_wreck.png"));
-			images.put("SHIPWRECK_1A", ship_wreck);
-			images.put("SHIPWRECK_2A", ship_wreck);
-			images.put("SHIPWRECK_3A", ship_wreck);
-			images.put("SHIPWRECK_4A", ship_wreck);
-			images.put("SHIPWRECK_5A", ship_wreck);
-			images.put("SHIPWRECK_6A", ship_wreck);
-			images.put("SHIPWRECK_7A", ship_wreck);
+			ItemImage ship_wreck = ImageFactory.createImage("/de/hstsoft/sdeep/res/ship_wreck.png", 8, 8);
+			images.put(ItemTypes.SHIPWRECK_1A, ship_wreck);
+			images.put(ItemTypes.SHIPWRECK_2A, ship_wreck);
+			images.put(ItemTypes.SHIPWRECK_3A, ship_wreck);
+			images.put(ItemTypes.SHIPWRECK_4A, ship_wreck);
+			images.put(ItemTypes.SHIPWRECK_5A, ship_wreck);
+			images.put(ItemTypes.SHIPWRECK_6A, ship_wreck);
+			images.put(ItemTypes.SHIPWRECK_7A, ship_wreck);
 
-			images.put("RAFT_V1", ImageIO.read(getClass().getResource("/de/hstsoft/sdeep/res/raft_v1.png")));
-			images.put("PADDLE", ImageIO.read(getClass().getResource("/de/hstsoft/sdeep/res/paddle.png")));
+			images.put(ItemTypes.RAFT_V1, ImageFactory.createImage("/de/hstsoft/sdeep/res/raft_v1.png", 8, 8));
+			images.put(ItemTypes.PADDLE, ImageFactory.createImage("/de/hstsoft/sdeep/res/paddle.png", 8, 8));
 
-			BufferedImage fort = ImageIO.read(getClass().getResource("/de/hstsoft/sdeep/res/sea_fort.png"));
-			images.put("SeaFort_1", fort);
-			images.put("SeaFort_2", fort);
-			images.put("SeaFort_3", fort);
+			ItemImage fort = ImageFactory.createImage("/de/hstsoft/sdeep/res/sea_fort.png", 32, 32, false);
+			images.put(ItemTypes.SEA_FORT_1, fort);
+			images.put(ItemTypes.SEA_FORT_2, fort);
+			images.put(ItemTypes.SEA_FORT_3, fort);
 
-			images.put("FIRE", ImageIO.read(getClass().getResource("/de/hstsoft/sdeep/res/fire_place.png")));
-			images.put("ROCK_SHARD", ImageIO.read(getClass().getResource("/de/hstsoft/sdeep/res/rock_shard.png")));
-			images.put("PALM_FROND", ImageIO.read(getClass().getResource("/de/hstsoft/sdeep/res/palm_frond.png")));
-			images.put("DUCTTAPE", ImageIO.read(getClass().getResource("/de/hstsoft/sdeep/res/ducttape.png")));
-			images.put("AIRTANK", ImageIO.read(getClass().getResource("/de/hstsoft/sdeep/res/airtank.png")));
-			images.put("LIGHTER", ImageIO.read(getClass().getResource("/de/hstsoft/sdeep/res/lighter.png")));
-			images.put("COMPASS", ImageIO.read(getClass().getResource("/de/hstsoft/sdeep/res/compass.png")));
-			images.put("BUCKET", ImageIO.read(getClass().getResource("/de/hstsoft/sdeep/res/bucket.png")));
-			images.put("TORCH", ImageIO.read(getClass().getResource("/de/hstsoft/sdeep/res/torch.png")));
+			images.put(ItemTypes.FIRE, ImageFactory.createImage("/de/hstsoft/sdeep/res/fire_place.png", 8, 8));
+			images.put(ItemTypes.ROCK_SHARD, ImageFactory.createImage("/de/hstsoft/sdeep/res/rock_shard.png", 8, 8));
+			images.put(ItemTypes.PALM_FROND, ImageFactory.createImage("/de/hstsoft/sdeep/res/palm_frond.png", 8, 8));
+			images.put(ItemTypes.DUCTTAPE, ImageFactory.createImage("/de/hstsoft/sdeep/res/ducttape.png", 8, 8));
+			images.put(ItemTypes.AIRTANK, ImageFactory.createImage("/de/hstsoft/sdeep/res/airtank.png", 8, 8));
+			images.put(ItemTypes.LIGHTER, ImageFactory.createImage("/de/hstsoft/sdeep/res/lighter.png", 8, 8));
+			images.put(ItemTypes.COMPASS, ImageFactory.createImage("/de/hstsoft/sdeep/res/compass.png", 8, 8));
+			images.put(ItemTypes.BUCKET, ImageFactory.createImage("/de/hstsoft/sdeep/res/bucket.png", 8, 8));
+			images.put(ItemTypes.TORCH, ImageFactory.createImage("/de/hstsoft/sdeep/res/torch.png", 8, 8));
 
-			BufferedImage medicine = ImageIO.read(getClass().getResource("/de/hstsoft/sdeep/res/vitamins.png"));
-			images.put("VITAMINS", medicine);
-			images.put("ANTIBIOTICS", medicine);
-			images.put("BANDAGE", ImageIO.read(getClass().getResource("/de/hstsoft/sdeep/res/bandage.png")));
+			ItemImage medicine = ImageFactory.createImage("/de/hstsoft/sdeep/res/vitamins.png", 8, 8);
+			images.put(ItemTypes.VITAMINS, medicine);
+			images.put(ItemTypes.ANTIBIOTICS, medicine);
+			images.put(ItemTypes.BANDAGE, ImageFactory.createImage("/de/hstsoft/sdeep/res/bandage.png", 8, 8));
 
-			images.put("CAN_BEANS", ImageIO.read(getClass().getResource("/de/hstsoft/sdeep/res/beans.png")));
+			images.put(ItemTypes.CAN_BEANS, ImageFactory.createImage("/de/hstsoft/sdeep/res/beans.png", 8, 8));
 
-			images.put("FUELCAN", ImageIO.read(getClass().getResource("/de/hstsoft/sdeep/res/fueltank.png")));
+			images.put(ItemTypes.FUELCAN, ImageFactory.createImage("/de/hstsoft/sdeep/res/fueltank.png", 8, 8));
 
-			images.put("AXE", ImageIO.read(getClass().getResource("/de/hstsoft/sdeep/res/axe.png")));
-			images.put("HAMMER", ImageIO.read(getClass().getResource("/de/hstsoft/sdeep/res/hammer.png")));
+			images.put(ItemTypes.AXE, ImageFactory.createImage("/de/hstsoft/sdeep/res/axe.png", 8, 8));
+			images.put(ItemTypes.HAMMER, ImageFactory.createImage("/de/hstsoft/sdeep/res/hammer.png", 8, 8));
 
-			images.put("FOUNDATION", ImageIO.read(getClass().getResource("/de/hstsoft/sdeep/res/foundation.png")));
-			images.put("FOUNDATION_ROOF", ImageIO.read(getClass().getResource("/de/hstsoft/sdeep/res/foundation_roof.png")));
-			images.put("FOUNDATION_SUPPORT", ImageIO.read(getClass().getResource("/de/hstsoft/sdeep/res/foundation_support.png")));
+			images.put(ItemTypes.FOUNDATION, ImageFactory.createImage("/de/hstsoft/sdeep/res/foundation.png", 8, 8));
+			images.put(ItemTypes.FOUNDATION_ROOF, ImageFactory.createImage("/de/hstsoft/sdeep/res/foundation_roof.png", 8, 8));
+			images.put(ItemTypes.FOUNDATION_SUPPORT,
+					ImageFactory.createImage("/de/hstsoft/sdeep/res/foundation_support.png", 8, 8));
 
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
 
-		doNotDraw.add("CONSOLE_1");
-		doNotDraw.add("CONSOLE_2");
-		doNotDraw.add("CONSOLE_3");
-		doNotDraw.add("DOOR_1");
-		doNotDraw.add("DOOR_2");
-		doNotDraw.add("FLOOR_HATCH");
-		doNotDraw.add("HARDCASE_1");
-		doNotDraw.add("LOCKER_1");
-		doNotDraw.add("LOCKER_2");
-		doNotDraw.add("LOCKER_3");
-		doNotDraw.add("LOCKER_4");
-		doNotDraw.add("TOOLBOX_1");
-		doNotDraw.add("WALL_CABINET_1");
-		doNotDraw.add("SeaFort_Brige");
+		doNotDraw.add(ItemTypes.CONSOLE_1);
+		doNotDraw.add(ItemTypes.CONSOLE_2);
+		doNotDraw.add(ItemTypes.CONSOLE_3);
+		doNotDraw.add(ItemTypes.DOOR_1);
+		doNotDraw.add(ItemTypes.DOOR_2);
+		doNotDraw.add(ItemTypes.FLOOR_HATCH);
+		doNotDraw.add(ItemTypes.HARDCASE_1);
+		doNotDraw.add(ItemTypes.LOCKER_1);
+		doNotDraw.add(ItemTypes.LOCKER_2);
+		doNotDraw.add(ItemTypes.LOCKER_3);
+		doNotDraw.add(ItemTypes.LOCKER_4);
+		doNotDraw.add(ItemTypes.TOOLBOX_1);
+		doNotDraw.add(ItemTypes.WALL_CABINET_1);
+		doNotDraw.add(ItemTypes.SEA_FORT_BRIDGE);
 
 	}
 
@@ -264,10 +278,14 @@ public class MapView extends JPanel implements IslandLoadListener {
 		transform.translate(centerX, centerY);
 		transform.rotate(-rotation - (Math.toRadians(-45)));
 		g2.setTransform(transform);
-		g2.drawImage(images.get("COMPASS_RING"), -70, -70, 140, 140, null);
+		ItemImage compassImg = images.get("COMPASS_RING");
+		g2.drawImage(compassImg.getImage(), -compassImg.getWidth() / 2, -compassImg.getHeight() / 2, compassImg.getWidth(),
+				compassImg.getHeight(), null);
 		transform.rotate(rotation - (Math.toRadians(45)));
 		g2.setTransform(transform);
-		g2.drawImage(images.get("COMPASS_NEEDLE"), -70, -70, 140, 140, null);
+		ItemImage needleImg = images.get("COMPASS_NEEDLE");
+		g2.drawImage(needleImg.getImage(), -needleImg.getWidth() / 2, -needleImg.getHeight() / 2, needleImg.getWidth(),
+				needleImg.getHeight(), null);
 		g2.setRenderingHints(new RenderingHints(RenderingHints.KEY_INTERPOLATION,
 				RenderingHints.VALUE_INTERPOLATION_NEAREST_NEIGHBOR));
 
@@ -287,9 +305,9 @@ public class MapView extends JPanel implements IslandLoadListener {
 			for (int i = 0; i < lines.length; i++) {
 
 				if (images.containsKey(lines[i].split("x ")[1])) {
-					BufferedImage bufferedImage = images.get(lines[i].split("x ")[1]);
-					g2.drawImage(bufferedImage, startX - lineHeight - 7, startY + (lineHeight * i) - lineHeight + 3, lineHeight,
-							lineHeight, null);
+					ItemImage image = images.get(lines[i].split("x ")[1]);
+					g2.drawImage(image.getImage(), startX - lineHeight - 7, startY + (lineHeight * i) - lineHeight + 3,
+							lineHeight, lineHeight, null);
 				} else {
 					g2.setColor(Color.GREEN);
 					g2.fillOval(startX - lineHeight - 4, startY + (lineHeight * i) - lineHeight + 6, 10, 10);
@@ -353,7 +371,8 @@ public class MapView extends JPanel implements IslandLoadListener {
 				t.rotate(-rotation);
 				t.scale(-1, 1);
 				g2.transform(t);
-				g2.drawImage(images.get("ISLAND_UNDISCOVERED"), -64, -64, null);
+				ItemImage image = images.get("ISLAND_UNDISCOVERED");
+				g2.drawImage(image.getImage(), -image.getWidth() / 2, -image.getHeight() / 2, null);
 				g2.setTransform(originalTransform);
 			}
 		}
@@ -379,16 +398,20 @@ public class MapView extends JPanel implements IslandLoadListener {
 				final int worldZ = (int) (nodeWorldZ - localPosition.z);
 
 				AffineTransform originalTransform = g2.getTransform();
-				// rotate the the canvas back to draw the object images aligned with the x-axis
-				t.setToIdentity();
-				t.translate(worldX, worldZ);
-				t.rotate(-rotation);
-				t.scale(-1, 1);
-				g2.transform(t);
 
 				if (images.containsKey(gameObject.getType())) {
-					BufferedImage bufferedImage = images.get(gameObject.getType());
-					g2.drawImage(bufferedImage, -4, -4, null);
+
+					ItemImage image = images.get(gameObject.getType());
+
+					t.setToIdentity();
+					t.translate(worldX, worldZ);
+					// rotate the the canvas back to draw the object images aligned with the x-axis
+					if (image.isAxisAligned()) t.rotate(-rotation);
+					t.scale(-1, 1);
+					g2.transform(t);
+
+					g2.drawImage(image.getImage(), -image.getWidth() / 2, -image.getHeight() / 2, image.getWidth(),
+							image.getHeight(), null);
 				} else {
 					g2.setColor(Color.GREEN);
 					g2.fillOval(-2, -2, 4, 4);
@@ -467,7 +490,6 @@ public class MapView extends JPanel implements IslandLoadListener {
 						} else {
 							objCount.put(gameObject.getType(), 1);
 						}
-
 					}
 				}
 

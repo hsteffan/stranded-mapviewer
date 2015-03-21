@@ -12,6 +12,7 @@ import java.util.ArrayList;
 
 import javax.imageio.ImageIO;
 
+import de.hstsoft.sdeep.ItemTypes;
 import de.hstsoft.sdeep.model.GameObject;
 import de.hstsoft.sdeep.model.Position;
 import de.hstsoft.sdeep.model.TerrainNode;
@@ -53,8 +54,8 @@ public class IslandShapeGenerationTask {
 
 			for (GameObject gameObject : children) {
 				String name = gameObject.getType();
-				if (name.contains("ROCK") || name.contains("PALM_TREE") || name.contains("STICK")
-						|| name.contains("POTATO_PLANT") || name.contains("YUCCA")) {
+				if (name.contains(ItemTypes.ROCK) || name.contains(ItemTypes.PALM_TREE) || name.contains(ItemTypes.STICK)
+						|| name.contains(ItemTypes.POTATO_PLANT) || name.contains(ItemTypes.YUCCA)) {
 					Position localPosition = gameObject.getLocalPosition();
 					final int worldX = (int) (128 - localPosition.x);
 					final int worldZ = (int) (128 - localPosition.z);
