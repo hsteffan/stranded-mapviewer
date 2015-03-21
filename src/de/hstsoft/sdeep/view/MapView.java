@@ -114,6 +114,8 @@ public class MapView extends JPanel implements IslandLoadListener {
 
 			BufferedImage locker = ImageIO.read(getClass().getResource("/de/hstsoft/sdeep/res/locker.png"));
 			images.put("LOCKER_1", locker);
+			images.put("LOCKER_2", locker);
+			images.put("LOCKER_3", locker);
 			images.put("LOCKER_4", locker);
 
 			BufferedImage door = ImageIO.read(getClass().getResource("/de/hstsoft/sdeep/res/door.png"));
@@ -134,11 +136,34 @@ public class MapView extends JPanel implements IslandLoadListener {
 			images.put("SHIPWRECK_7A", ship_wreck);
 
 			images.put("RAFT_V1", ImageIO.read(getClass().getResource("/de/hstsoft/sdeep/res/raft_v1.png")));
+			images.put("PADDLE", ImageIO.read(getClass().getResource("/de/hstsoft/sdeep/res/paddle.png")));
+
+			BufferedImage fort = ImageIO.read(getClass().getResource("/de/hstsoft/sdeep/res/sea_fort.png"));
+			images.put("SeaFort_1", fort);
+			images.put("SeaFort_2", fort);
+			images.put("SeaFort_3", fort);
 
 			images.put("FIRE", ImageIO.read(getClass().getResource("/de/hstsoft/sdeep/res/fire_place.png")));
 			images.put("ROCK_SHARD", ImageIO.read(getClass().getResource("/de/hstsoft/sdeep/res/rock_shard.png")));
 			images.put("PALM_FROND", ImageIO.read(getClass().getResource("/de/hstsoft/sdeep/res/palm_frond.png")));
 			images.put("DUCTTAPE", ImageIO.read(getClass().getResource("/de/hstsoft/sdeep/res/ducttape.png")));
+			images.put("AIRTANK", ImageIO.read(getClass().getResource("/de/hstsoft/sdeep/res/airtank.png")));
+			images.put("LIGHTER", ImageIO.read(getClass().getResource("/de/hstsoft/sdeep/res/lighter.png")));
+			images.put("COMPASS", ImageIO.read(getClass().getResource("/de/hstsoft/sdeep/res/compass.png")));
+			images.put("BUCKET", ImageIO.read(getClass().getResource("/de/hstsoft/sdeep/res/bucket.png")));
+			images.put("TORCH", ImageIO.read(getClass().getResource("/de/hstsoft/sdeep/res/torch.png")));
+
+			BufferedImage medicine = ImageIO.read(getClass().getResource("/de/hstsoft/sdeep/res/vitamins.png"));
+			images.put("VITAMINS", medicine);
+			images.put("ANTIBIOTICS", medicine);
+			images.put("BANDAGE", ImageIO.read(getClass().getResource("/de/hstsoft/sdeep/res/bandage.png")));
+
+			images.put("CAN_BEANS", ImageIO.read(getClass().getResource("/de/hstsoft/sdeep/res/beans.png")));
+
+			images.put("FUELCAN", ImageIO.read(getClass().getResource("/de/hstsoft/sdeep/res/fueltank.png")));
+
+			images.put("AXE", ImageIO.read(getClass().getResource("/de/hstsoft/sdeep/res/axe.png")));
+			images.put("HAMMER", ImageIO.read(getClass().getResource("/de/hstsoft/sdeep/res/hammer.png")));
 
 			images.put("FOUNDATION", ImageIO.read(getClass().getResource("/de/hstsoft/sdeep/res/foundation.png")));
 			images.put("FOUNDATION_ROOF", ImageIO.read(getClass().getResource("/de/hstsoft/sdeep/res/foundation_roof.png")));
@@ -149,6 +174,7 @@ public class MapView extends JPanel implements IslandLoadListener {
 		}
 
 		doNotDraw.add("CONSOLE_1");
+		doNotDraw.add("CONSOLE_2");
 		doNotDraw.add("CONSOLE_3");
 		doNotDraw.add("DOOR_1");
 		doNotDraw.add("DOOR_2");
@@ -156,9 +182,11 @@ public class MapView extends JPanel implements IslandLoadListener {
 		doNotDraw.add("HARDCASE_1");
 		doNotDraw.add("LOCKER_1");
 		doNotDraw.add("LOCKER_2");
+		doNotDraw.add("LOCKER_3");
 		doNotDraw.add("LOCKER_4");
 		doNotDraw.add("TOOLBOX_1");
 		doNotDraw.add("WALL_CABINET_1");
+		doNotDraw.add("SeaFort_Brige");
 
 	}
 
