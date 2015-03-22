@@ -5,6 +5,7 @@
 package de.hstsoft.sdeep.view;
 
 import java.awt.Color;
+import java.awt.Font;
 import java.awt.FontMetrics;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
@@ -210,6 +211,7 @@ public class MapView extends JPanel implements IslandLoadListener {
 
 		Graphics2D g2 = (Graphics2D) g.create();
 
+		identity = g2.getTransform();
 		g2.setRenderingHints(new RenderingHints(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_OFF));
 		// g2.setRenderingHints(new RenderingHints(RenderingHints.KEY_INTERPOLATION,
 		// RenderingHints.VALUE_INTERPOLATION_BILINEAR));
@@ -225,7 +227,7 @@ public class MapView extends JPanel implements IslandLoadListener {
 			final int yc = getHeight() / 2;
 			fontMetrics = g2.getFontMetrics();
 
-			AffineTransform affineTransform = new AffineTransform();
+			AffineTransform affineTransform = g2.getTransform();
 			affineTransform.translate(xc, yc);
 			affineTransform.scale(-1, 1);
 			affineTransform.rotate(rotation);
@@ -241,6 +243,23 @@ public class MapView extends JPanel implements IslandLoadListener {
 			// Save the viewport to be updated by the ZoomAndPanListener
 			zoomAndPanListener.setCoordTransform(affineTransform);
 		}
+
+		if (terrainGeneration == null) {
+			Font saveFont = g2.getFont();
+			g2.setRenderingHints(new RenderingHints(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON));
+			g2.setColor(Color.BLACK);
+			g2.setFont(new Font("Arial", Font.PLAIN, 28));
+			String str = "Please use the file menu to load a save game file.";
+			int w = g2.getFontMetrics().stringWidth(str);
+			g2.drawString(str, getWidth() / 2 - w / 2, getHeight() / 2);
+
+			g2.setFont(new Font("Arial", Font.ITALIC, 14));
+			str = "(The save game file can be found at <Stranded Deep installation folder>\\Stranded_Deep_x64_Data\\Data\\Save.json)";
+			w = g2.getFontMetrics().stringWidth(str);
+			g2.drawString(str, getWidth() / 2 - w / 2, getHeight() / 2 + 20);
+			g2.setFont(saveFont);
+		}
+
 		// Restore the viewport after it was updated by the ZoomAndPanListener
 		this.coordTransform = zoomAndPanListener.getCoordTransform();
 		this.rotation = zoomAndPanListener.getRotation();
