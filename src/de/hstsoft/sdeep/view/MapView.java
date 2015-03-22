@@ -21,10 +21,10 @@ import java.awt.geom.Point2D;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map.Entry;
+import java.util.TreeMap;
 import java.util.concurrent.ConcurrentHashMap;
 
 import javax.swing.JPanel;
@@ -491,7 +491,7 @@ public class MapView extends JPanel implements IslandLoadListener {
 				hoveredTerrainNode = terrainNode;
 				ArrayList<GameObject> objects = new ArrayList<>();
 
-				HashMap<String, Integer> objCount = new HashMap<>();
+				TreeMap<String, Integer> objCount = new TreeMap<>();
 
 				Rectangle bounds = new Rectangle();
 				for (GameObject gameObject : hoveredTerrainNode.getChildren()) {
@@ -524,7 +524,6 @@ public class MapView extends JPanel implements IslandLoadListener {
 						width = Math.max(width, fontMetrics.stringWidth(popup.lines[i]));
 						i++;
 					}
-					Arrays.sort(popup.lines);
 					Rectangle infoBounds = new Rectangle(mousePosition.x - width - 15, mousePosition.y - totalHeight - 5,
 							width + 10, totalHeight + 5);
 					popup.bounds = infoBounds;
