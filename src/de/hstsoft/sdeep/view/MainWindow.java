@@ -57,7 +57,6 @@ public class MainWindow extends JFrame {
 				Thread.sleep(250);
 				SaveGame parse = new SaveGameParser().parse(file);
 				mapView.setTerrainGeneration(parse.getTerrainGeneration());
-				mapView.repaint();
 			} catch (IOException e) {
 				e.printStackTrace();
 			} catch (InterruptedException e) {

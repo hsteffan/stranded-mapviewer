@@ -542,7 +542,7 @@ public class MapView extends JPanel implements IslandLoadListener {
 		if (resetView)
 			resetView();
 		else
-			paintImmediately(0, 0, getWidth(), getHeight());
+			repaint();
 	}
 
 	public boolean isShowInfo() {
@@ -551,7 +551,7 @@ public class MapView extends JPanel implements IslandLoadListener {
 
 	public void setShowInfo(boolean showInfo) {
 		this.showInfo = showInfo;
-		paintImmediately(0, 0, getWidth(), getHeight());
+		repaint();
 	}
 
 	public boolean isShowGrid() {
@@ -560,7 +560,7 @@ public class MapView extends JPanel implements IslandLoadListener {
 
 	public void setShowGrid(boolean showGrid) {
 		this.showGrid = showGrid;
-		paintImmediately(0, 0, getWidth(), getHeight());
+		repaint();
 	}
 
 	public void resetView() {
@@ -582,13 +582,14 @@ public class MapView extends JPanel implements IslandLoadListener {
 		}
 		zoomAndPanListener.setZoomLevel(0);
 		zoomAndPanListener.setCoordTransform(affineTransform);
+		init = true;
 		repaint();
 	}
 
 	@Override
 	public void onIslandLoaded(TerrainNode node, BufferedImage islandShape) {
 		islandShapes.put(node.getName(), islandShape);
-		paintImmediately(0, 0, getWidth(), getHeight());
+		repaint();
 	}
 
 }
