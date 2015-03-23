@@ -66,6 +66,8 @@ public class MapView extends JPanel implements IslandLoadListener {
 
 	private ItemInfoWindow itemInfoWindow;
 
+	private NoteInfoWindow noteInfoWindow;
+
 	private double rotation = Math.toRadians(45);
 
 	private AffineTransform identity = new AffineTransform();
@@ -390,7 +392,7 @@ public class MapView extends JPanel implements IslandLoadListener {
 		for (int i = 0; i < lines.length; i++) {
 			info.bounds.width = Math.max(info.bounds.width, fontMetrics.stringWidth(lines[i] + 10));
 		}
-		info.bounds.height = (lines.length * lineHeight) + lineHeight + 5;
+		info.bounds.height = (lines.length * lineHeight) + lineHeight + 10;
 
 		// move the window to the left and top of the mouse pointer
 		info.bounds.x = info.bounds.x - info.bounds.width;
@@ -400,6 +402,9 @@ public class MapView extends JPanel implements IslandLoadListener {
 		g2.setColor(new Color(0, 0, 0, 150));
 		g2.fill(info.bounds);
 
+		g2.setColor(new Color(0, 0, 0, 80));
+		g2.fillRect(info.bounds.x, info.bounds.y, info.bounds.width, lineHeight + 4);
+
 		// draw the note title and text
 		int startX = info.bounds.x + 5;
 		int startY = info.bounds.y + lineHeight;
@@ -407,7 +412,7 @@ public class MapView extends JPanel implements IslandLoadListener {
 		g2.drawString(info.note.getTitle(), startX, startY);
 		startY += lineHeight;
 		for (int i = 0; i < lines.length; i++) {
-			g2.drawString(lines[i], startX, startY + (i * lineHeight));
+			g2.drawString(lines[i], startX, startY + 5 + (i * lineHeight));
 		}
 
 	}
@@ -563,7 +568,13 @@ public class MapView extends JPanel implements IslandLoadListener {
 				e1.printStackTrace();
 			}
 
-			NoteDlg noteDlg = new NoteDlg(saveGame.getAtmosphere(), mapCoordinates);
+			NoteDlg noteDlg;
+			Note noteAt = noteManager.getNoteAt(mapCoordinates, 16);
+			if (noteAt != null) {
+				noteDlg = new NoteDlg(noteManager, noteAt);
+			} else {
+				noteDlg = new NoteDlg(noteManager, saveGame.getAtmosphere(), mapCoordinates);
+			}
 
 			Point locationOnScreen = e.getLocationOnScreen();
 			noteDlg.setLocation(locationOnScreen);
@@ -571,8 +582,6 @@ public class MapView extends JPanel implements IslandLoadListener {
 
 		}
 	}
-
-	private NoteInfoWindow noteInfoWindow;
 
 	private class MouseMotionListener extends MouseMotionAdapter {
 
@@ -597,8 +606,8 @@ public class MapView extends JPanel implements IslandLoadListener {
 				noteInfoWindow = new NoteInfoWindow();
 				noteInfoWindow.note = noteAt;
 				noteInfoWindow.bounds = new Rectangle(mousePosition);
-				repaint();
-				return;
+				// repaint();
+				// return;
 			}
 
 			ArrayList<TerrainNode> terrainNodes = terrainGeneration.getTerrainNodes();

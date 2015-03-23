@@ -41,6 +41,12 @@ public class NoteManager {
 		saveNotes();
 	}
 
+	/** @param note */
+	public void updateNote(Note note) {
+		// TODO implement updateing a Note.
+		saveNotes();
+	}
+
 	public void remove(Note note) {
 		notes.remove(note);
 		saveNotes();

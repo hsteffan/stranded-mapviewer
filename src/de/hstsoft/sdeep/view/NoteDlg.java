@@ -7,6 +7,8 @@ package de.hstsoft.sdeep.view;
 import java.awt.BorderLayout;
 import java.awt.Component;
 import java.awt.FlowLayout;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.awt.geom.Point2D;
 
 import javax.swing.Box;
@@ -22,6 +24,7 @@ import javax.swing.JTextField;
 import javax.swing.LayoutStyle.ComponentPlacement;
 import javax.swing.border.EmptyBorder;
 
+import de.hstsoft.sdeep.NoteManager;
 import de.hstsoft.sdeep.model.Atmosphere;
 import de.hstsoft.sdeep.model.Note;
 
@@ -32,6 +35,7 @@ public class NoteDlg extends JFrame {
 	private Note note;
 	private JButton btnDelete;
 	private JTextArea txtText;
+	private NoteManager mgr;
 
 	/** Create the frame. */
 	public NoteDlg() {
@@ -48,6 +52,11 @@ public class NoteDlg extends JFrame {
 		pBottom.setLayout(new BoxLayout(pBottom, BoxLayout.X_AXIS));
 
 		btnDelete = new JButton("Delete");
+		btnDelete.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				delete();
+			}
+		});
 		btnDelete.setVisible(false);
 		pBottom.add(btnDelete);
 
@@ -55,6 +64,11 @@ public class NoteDlg extends JFrame {
 		pBottom.add(horizontalGlue);
 
 		JButton btnSave = new JButton("Save");
+		btnSave.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				save();
+			}
+		});
 		pBottom.add(btnSave);
 
 		JPanel pHead = new JPanel();
@@ -75,22 +89,24 @@ public class NoteDlg extends JFrame {
 
 		JLabel lblMessage = new JLabel("Message:");
 
-		txtText = new JTextArea();
+		txtText = new JTextArea(5, 100);
+		txtText.setWrapStyleWord(true);
+		txtText.setLineWrap(true);
+
 		GroupLayout gl_pCenter = new GroupLayout(pCenter);
-		gl_pCenter.setHorizontalGroup(gl_pCenter.createParallelGroup(Alignment.LEADING).addGroup(
-				Alignment.TRAILING,
+		gl_pCenter.setHorizontalGroup(gl_pCenter.createParallelGroup(Alignment.TRAILING).addGroup(
 				gl_pCenter
 						.createSequentialGroup()
 						.addContainerGap()
 						.addGroup(
 								gl_pCenter
 										.createParallelGroup(Alignment.TRAILING)
-										.addComponent(txtText, Alignment.LEADING, GroupLayout.DEFAULT_SIZE, 414, Short.MAX_VALUE)
+										.addComponent(txtText, Alignment.LEADING, 50, GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
 										.addGroup(
 												Alignment.LEADING,
 												gl_pCenter.createSequentialGroup().addComponent(lblTitle)
 														.addPreferredGap(ComponentPlacement.UNRELATED)
-														.addComponent(txtTitle, GroupLayout.DEFAULT_SIZE, 380, Short.MAX_VALUE))
+														.addComponent(txtTitle, 50, GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
 										.addComponent(lblMessage, Alignment.LEADING)).addContainerGap()));
 		gl_pCenter.setVerticalGroup(gl_pCenter.createParallelGroup(Alignment.LEADING).addGroup(
 				gl_pCenter
@@ -103,13 +119,37 @@ public class NoteDlg extends JFrame {
 										.addComponent(txtTitle, GroupLayout.PREFERRED_SIZE, GroupLayout.DEFAULT_SIZE,
 												GroupLayout.PREFERRED_SIZE)).addPreferredGap(ComponentPlacement.RELATED)
 						.addComponent(lblMessage).addPreferredGap(ComponentPlacement.RELATED)
-						.addComponent(txtText, GroupLayout.DEFAULT_SIZE, 146, Short.MAX_VALUE).addContainerGap()));
+						.addComponent(txtText, GroupLayout.DEFAULT_SIZE, 77, Short.MAX_VALUE)));
 		pCenter.setLayout(gl_pCenter);
 
 	}
 
-	public NoteDlg(Note note) {
+	protected void delete() {
+		mgr.remove(note);
+		close();
+	}
+
+	private boolean update = false;
+
+	private void close() {
+		this.setVisible(false);
+		this.dispose();
+	}
+
+	protected void save() {
+		note.setTitle(txtTitle.getText());
+		note.setText(txtText.getText());
+		if (update)
+			mgr.updateNote(note);
+		else
+			mgr.addNote(note);
+		close();
+	}
+
+	public NoteDlg(NoteManager mgr, Note note) {
 		this();
+		update = true;
+		this.mgr = mgr;
 		this.note = note;
 		btnDelete.setVisible(true);
 
@@ -119,9 +159,17 @@ public class NoteDlg extends JFrame {
 		setHeader(note.getDaysSurvived(), note.getYear(), note.getMonth(), note.getDay());
 	}
 
-	public NoteDlg(Atmosphere atmos, Point2D position) {
+	public NoteDlg(NoteManager mgr, Atmosphere atmos, Point2D position) {
 		this();
-		setHeader(atmos.getDaysElapsed(), atmos.getYear(), atmos.getMonth(), atmos.getDay());
+		update = false;
+		this.mgr = mgr;
+		this.note = new Note();
+		this.note.setDaysSurvived(atmos.getDaysElapsed());
+		this.note.setDay(atmos.getDay());
+		this.note.setMonth(atmos.getMonth());
+		this.note.setYear(atmos.getYear());
+		this.note.setPosition(position);
+		setHeader(note.getDaysSurvived(), note.getYear(), note.getMonth(), note.getDay());
 	}
 
 	private void setHeader(int dayselapsed, int year, int month, int day) {
