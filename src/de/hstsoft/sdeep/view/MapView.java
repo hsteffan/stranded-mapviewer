@@ -64,7 +64,7 @@ public class MapView extends JPanel implements IslandLoadListener {
 
 	private FontMetrics fontMetrics;
 
-	private InfoWindow popup;
+	private ItemInfoWindow itemInfoWindow;
 
 	private double rotation = Math.toRadians(45);
 
@@ -323,34 +323,9 @@ public class MapView extends JPanel implements IslandLoadListener {
 		g2.setRenderingHints(new RenderingHints(RenderingHints.KEY_INTERPOLATION,
 				RenderingHints.VALUE_INTERPOLATION_NEAREST_NEIGHBOR));
 
-		// set the default transform to draw the popup and stuff
+		// set the default transform to draw the itemInfoPopup
 		g2.setTransform(identity);
-		if (popup != null) {
-			g2.setColor(new Color(0, 0, 0, 150));
-			g2.fill(popup.bounds);
-
-			int lineHeight = fontMetrics.getHeight();
-			int startX = popup.bounds.x + 5;
-			int startY = popup.bounds.y + lineHeight;
-
-			g2.setColor(new Color(0, 0, 0, 200));
-			g2.fillRect(popup.bounds.x - lineHeight - 4, popup.bounds.y, lineHeight + 4, popup.bounds.height);
-			String[] lines = popup.lines;
-			for (int i = 0; i < lines.length; i++) {
-
-				if (images.containsKey(lines[i].split("x ")[1])) {
-					ItemImage image = images.get(lines[i].split("x ")[1]);
-					g2.drawImage(image.getImage(), startX - lineHeight - 7, startY + (lineHeight * i) - lineHeight + 3,
-							lineHeight, lineHeight, null);
-				} else {
-					g2.setColor(Color.GREEN);
-					g2.fillOval(startX - lineHeight - 4, startY + (lineHeight * i) - lineHeight + 6, 10, 10);
-				}
-				g2.setColor(Color.WHITE);
-				g2.drawString(lines[i], startX, startY + (lineHeight * i));
-			}
-
-		}
+		if (itemInfoWindow != null) drawItemInfoWindow(g2, itemInfoWindow);
 
 		g2.setTransform(identity);
 		if (noteInfoWindow != null) drawNoteInfoWindow(g2, noteInfoWindow);
@@ -378,37 +353,65 @@ public class MapView extends JPanel implements IslandLoadListener {
 
 	}
 
-	/** @param g2 */
+	private void drawItemInfoWindow(Graphics2D g2, ItemInfoWindow itemInfo) {
+		g2.setColor(new Color(0, 0, 0, 150));
+		g2.fill(itemInfo.bounds);
+
+		int lineHeight = fontMetrics.getHeight();
+		int startX = itemInfo.bounds.x + 5;
+		int startY = itemInfo.bounds.y + lineHeight;
+
+		g2.setColor(new Color(0, 0, 0, 200));
+		g2.fillRect(itemInfo.bounds.x - lineHeight - 4, itemInfo.bounds.y, lineHeight + 4, itemInfo.bounds.height);
+		String[] lines = itemInfo.lines;
+		for (int i = 0; i < lines.length; i++) {
+
+			if (images.containsKey(lines[i].split("x ")[1])) {
+				ItemImage image = images.get(lines[i].split("x ")[1]);
+				g2.drawImage(image.getImage(), startX - lineHeight - 7, startY + (lineHeight * i) - lineHeight + 3, lineHeight,
+						lineHeight, null);
+			} else {
+				g2.setColor(Color.GREEN);
+				g2.fillOval(startX - lineHeight - 4, startY + (lineHeight * i) - lineHeight + 6, 10, 10);
+			}
+			g2.setColor(Color.WHITE);
+			g2.drawString(lines[i], startX, startY + (lineHeight * i));
+		}
+	}
+
 	private void drawNoteInfoWindow(Graphics2D g2, NoteInfoWindow info) {
 
 		int lineHeight = fontMetrics.getHeight();
-		int startX = info.bounds.x + 5;
-		int startY = info.bounds.y + lineHeight;
 
 		String lines[] = info.note.getText().split("\n");
 
+		// calculate the width and height
 		info.bounds.width = fontMetrics.stringWidth(info.note.getTitle()) + 10;
-
 		for (int i = 0; i < lines.length; i++) {
 			info.bounds.width = Math.max(info.bounds.width, fontMetrics.stringWidth(lines[i] + 10));
 		}
-
 		info.bounds.height = (lines.length * lineHeight) + lineHeight + 5;
 
+		// move the window to the left and top of the mouse pointer
+		info.bounds.x = info.bounds.x - info.bounds.width;
+		info.bounds.y = info.bounds.y - info.bounds.height;
+
+		// draw the background
 		g2.setColor(new Color(0, 0, 0, 150));
 		g2.fill(info.bounds);
 
+		// draw the note title and text
+		int startX = info.bounds.x + 5;
+		int startY = info.bounds.y + lineHeight;
 		g2.setColor(Color.WHITE);
 		g2.drawString(info.note.getTitle(), startX, startY);
 		startY += lineHeight;
-
 		for (int i = 0; i < lines.length; i++) {
 			g2.drawString(lines[i], startX, startY + (i * lineHeight));
 		}
 
 	}
 
-	/** @param g2 */
 	private void drawNotes(Graphics2D g2) {
 		AffineTransform t = new AffineTransform();
 		ArrayList<Note> notes = noteManager.getNotes();
@@ -577,7 +580,7 @@ public class MapView extends JPanel implements IslandLoadListener {
 		public void mouseMoved(MouseEvent e) {
 			if (terrainGeneration == null) return;
 			hoveredTerrainNode = null;
-			popup = null;
+			itemInfoWindow = null;
 			noteInfoWindow = null;
 
 			Point mousePosition = e.getPoint();
@@ -629,20 +632,20 @@ public class MapView extends JPanel implements IslandLoadListener {
 				}
 
 				if (!objCount.isEmpty()) {
-					popup = new InfoWindow();
-					popup.lines = new String[objCount.size()];
+					itemInfoWindow = new ItemInfoWindow();
+					itemInfoWindow.lines = new String[objCount.size()];
 					final int lineHeight = fontMetrics.getHeight();
 					final int totalHeight = (lineHeight) * objCount.size();
 					int width = 0;
 					int i = 0;
 					for (Entry<String, Integer> entry : objCount.entrySet()) {
-						popup.lines[i] = entry.getValue().intValue() + "x " + entry.getKey();
-						width = Math.max(width, fontMetrics.stringWidth(popup.lines[i]));
+						itemInfoWindow.lines[i] = entry.getValue().intValue() + "x " + entry.getKey();
+						width = Math.max(width, fontMetrics.stringWidth(itemInfoWindow.lines[i]));
 						i++;
 					}
 					Rectangle infoBounds = new Rectangle(mousePosition.x - width - 15, mousePosition.y - totalHeight - 5,
 							width + 10, totalHeight + 5);
-					popup.bounds = infoBounds;
+					itemInfoWindow.bounds = infoBounds;
 					repaint();
 				}
 
@@ -651,7 +654,7 @@ public class MapView extends JPanel implements IslandLoadListener {
 		}
 	}
 
-	private class InfoWindow {
+	private class ItemInfoWindow {
 		private Rectangle bounds;
 		private String[] lines;
 	}
