@@ -30,6 +30,7 @@ import de.hstsoft.sdeep.model.Note;
 
 /** @author Holger Steffan created: 22.03.2015 */
 public class NoteDlg extends JFrame {
+	private static final long serialVersionUID = -763071785048617772L;
 	private JTextField txtTitle;
 	private JLabel lblDate;
 	private Note note;

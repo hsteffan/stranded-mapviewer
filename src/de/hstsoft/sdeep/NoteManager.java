@@ -88,17 +88,18 @@ public class NoteManager {
 			JSONArray notesArray = (JSONArray) json.get("notes");
 
 			this.notes = new ArrayList<>();
+			@SuppressWarnings("rawtypes")
 			Iterator iterator = notesArray.iterator();
 			while (iterator.hasNext()) {
 				JSONObject noteJson = (JSONObject) iterator.next();
 				Note note = Note.fromJson(noteJson);
 				notes.add(note);
 			}
-			System.out.println(notes);
 		}
 
 	}
 
+	@SuppressWarnings("unchecked")
 	private void saveNotes() {
 		JSONObject envelope = new JSONObject();
 		envelope.put("version", VERSION);

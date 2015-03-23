@@ -77,6 +77,7 @@ public class Note {
 		this.position = position;
 	}
 
+	@SuppressWarnings("unchecked")
 	public JSONObject toJson() {
 		JSONObject jsonObject = new JSONObject();
 		jsonObject.put("x", (float) position.getX());

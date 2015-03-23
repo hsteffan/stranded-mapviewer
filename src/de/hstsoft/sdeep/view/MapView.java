@@ -54,6 +54,7 @@ public class MapView extends JPanel implements IslandLoadListener {
 
 	private boolean showInfo = false;
 	private boolean showGrid = true;
+	private boolean showNotes = true;
 
 	private boolean init = true;
 
@@ -288,7 +289,7 @@ public class MapView extends JPanel implements IslandLoadListener {
 			// draw the objects
 			drawObjects(g2, terrainNodes);
 
-			drawNotes(g2);
+			if (showNotes) drawNotes(g2);
 
 			Position worldOrigin = terrainGeneration.getWorldOrigin();
 			Position playerPosition = terrainGeneration.getPlayerPosition();
@@ -330,7 +331,7 @@ public class MapView extends JPanel implements IslandLoadListener {
 		if (itemInfoWindow != null) drawItemInfoWindow(g2, itemInfoWindow);
 
 		g2.setTransform(identity);
-		if (noteInfoWindow != null) drawNoteInfoWindow(g2, noteInfoWindow);
+		if (noteInfoWindow != null && showNotes) drawNoteInfoWindow(g2, noteInfoWindow);
 
 		String zoomStr = String.format("zoomLevel: %d", zoomAndPanListener.getZoomLevel());
 		String mapPos = String.format("mapPos: %.1f/%.1f", mouseOnMap.getX(), mouseOnMap.getY());
@@ -704,6 +705,15 @@ public class MapView extends JPanel implements IslandLoadListener {
 
 	public void setShowGrid(boolean showGrid) {
 		this.showGrid = showGrid;
+		repaint();
+	}
+
+	public boolean isShowNotes() {
+		return this.showNotes;
+	}
+
+	public void setShowNotes(boolean showNotes) {
+		this.showNotes = showNotes;
 		repaint();
 	}
 

@@ -182,6 +182,16 @@ public class MainWindow extends JFrame {
 		menuItemShowgrid.setSelected(mapView.isShowGrid());
 		mnView.add(menuItemShowgrid);
 
+		final JCheckBoxMenuItem menuItemNotes = new JCheckBoxMenuItem("ShowNotes");
+		menuItemNotes.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				boolean showNotes = menuItemNotes.isSelected();
+				mapView.setShowNotes(showNotes);
+			}
+		});
+		menuItemNotes.setSelected(mapView.isShowNotes());
+		mnView.add(menuItemNotes);
+
 		mnView.addSeparator();
 
 		menuItemFileWatcher = new JCheckBoxMenuItem("Auto refresh");
