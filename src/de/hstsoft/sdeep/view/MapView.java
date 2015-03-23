@@ -13,6 +13,7 @@ import java.awt.Image;
 import java.awt.Point;
 import java.awt.Rectangle;
 import java.awt.RenderingHints;
+import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseMotionAdapter;
 import java.awt.geom.AffineTransform;
@@ -30,8 +31,11 @@ import java.util.concurrent.ConcurrentHashMap;
 import javax.swing.JPanel;
 
 import de.hstsoft.sdeep.ItemTypes;
+import de.hstsoft.sdeep.NoteManager;
 import de.hstsoft.sdeep.model.GameObject;
+import de.hstsoft.sdeep.model.Note;
 import de.hstsoft.sdeep.model.Position;
+import de.hstsoft.sdeep.model.SaveGame;
 import de.hstsoft.sdeep.model.TerrainGeneration;
 import de.hstsoft.sdeep.model.TerrainNode;
 
@@ -66,6 +70,10 @@ public class MapView extends JPanel implements IslandLoadListener {
 
 	private AffineTransform identity = new AffineTransform();
 
+	private SaveGame saveGame;
+
+	private NoteManager noteManager;
+
 	public static class ImageFactory {
 
 		public static ItemImage createImage(String itemPath, int width, int height) throws IOException {
@@ -82,11 +90,14 @@ public class MapView extends JPanel implements IslandLoadListener {
 	public MapView() {
 		super(true);
 
+		this.setLayout(null);
+
 		this.zoomAndPanListener = new ZoomAndPanListener(this);
 		this.addMouseListener(zoomAndPanListener);
 		this.addMouseMotionListener(zoomAndPanListener);
 		this.addMouseWheelListener(zoomAndPanListener);
 		this.addMouseMotionListener(new MouseMotionListener());
+		this.addMouseListener(new MouseClickListener());
 
 		islandShapeGenerationManager = new IslandShapeGenerationManager(this);
 
@@ -97,6 +108,8 @@ public class MapView extends JPanel implements IslandLoadListener {
 
 			images.put("ISLAND", ImageFactory.createImage("/de/hstsoft/sdeep/res/island.png", 256, 256));
 			images.put("ISLAND_UNDISCOVERED", ImageFactory.createImage("/de/hstsoft/sdeep/res/island_undiscovered.png", 128, 128));
+
+			images.put("NOTE", ImageFactory.createImage("/de/hstsoft/sdeep/res/note.png", 16, 16));
 
 			images.put(ItemTypes.SHARK_TIGER, ImageFactory.createImage("/de/hstsoft/sdeep/res/shark_tiger.png", 8, 8));
 			images.put(ItemTypes.SHARK_REEF, ImageFactory.createImage("/de/hstsoft/sdeep/res/shark_reef.png", 8, 8));
@@ -273,6 +286,8 @@ public class MapView extends JPanel implements IslandLoadListener {
 			// draw the objects
 			drawObjects(g2, terrainNodes);
 
+			drawNotes(g2);
+
 			Position worldOrigin = terrainGeneration.getWorldOrigin();
 			Position playerPosition = terrainGeneration.getPlayerPosition();
 			final int playerX = (int) (worldOrigin.x - playerPosition.x);
@@ -337,6 +352,9 @@ public class MapView extends JPanel implements IslandLoadListener {
 
 		}
 
+		g2.setTransform(identity);
+		if (noteInfoWindow != null) drawNoteInfoWindow(g2, noteInfoWindow);
+
 		String zoomStr = String.format("zoomLevel: %d", zoomAndPanListener.getZoomLevel());
 		String mapPos = String.format("mapPos: %.1f/%.1f", mouseOnMap.getX(), mouseOnMap.getY());
 		int width = Math.max(fontMetrics.stringWidth(zoomStr), fontMetrics.stringWidth(mapPos));
@@ -358,6 +376,68 @@ public class MapView extends JPanel implements IslandLoadListener {
 
 		g2.dispose();
 
+	}
+
+	/** @param g2 */
+	private void drawNoteInfoWindow(Graphics2D g2, NoteInfoWindow info) {
+
+		int lineHeight = fontMetrics.getHeight();
+		int startX = info.bounds.x + 5;
+		int startY = info.bounds.y + lineHeight;
+
+		String lines[] = info.note.getText().split("\n");
+
+		info.bounds.width = fontMetrics.stringWidth(info.note.getTitle()) + 10;
+
+		for (int i = 0; i < lines.length; i++) {
+			info.bounds.width = Math.max(info.bounds.width, fontMetrics.stringWidth(lines[i] + 10));
+		}
+
+		info.bounds.height = (lines.length * lineHeight) + lineHeight + 5;
+
+		g2.setColor(new Color(0, 0, 0, 150));
+		g2.fill(info.bounds);
+
+		g2.setColor(Color.WHITE);
+		g2.drawString(info.note.getTitle(), startX, startY);
+		startY += lineHeight;
+
+		for (int i = 0; i < lines.length; i++) {
+			g2.drawString(lines[i], startX, startY + (i * lineHeight));
+		}
+
+	}
+
+	/** @param g2 */
+	private void drawNotes(Graphics2D g2) {
+		AffineTransform t = new AffineTransform();
+		ArrayList<Note> notes = noteManager.getNotes();
+		for (Note note : notes) {
+
+			AffineTransform originalTransform = g2.getTransform();
+
+			// if (images.containsKey(gameObject.getType())) {
+			double worldX = note.getPosition().getX();
+			double worldZ = note.getPosition().getY();
+
+			ItemImage image = images.get("NOTE");
+
+			t.setToIdentity();
+			t.translate(worldX, worldZ);
+			// rotate the the canvas back to draw the object images aligned with the x-axis
+			if (image.isAxisAligned()) t.rotate(-rotation);
+			t.scale(-1, 1);
+			g2.transform(t);
+
+			g2.drawImage(image.getImage(), -image.getWidth() / 2, -image.getHeight() / 2, image.getWidth(), image.getHeight(),
+					null);
+
+			g2.setColor(Color.DARK_GRAY);
+			g2.drawString(note.getTitle(), 8, 4);
+
+			g2.setTransform(originalTransform);
+
+		}
 	}
 
 	private void drawTerrain(Graphics2D g2, ArrayList<TerrainNode> terrainNodes) {
@@ -465,11 +545,40 @@ public class MapView extends JPanel implements IslandLoadListener {
 		}
 	}
 
+	private class MouseClickListener extends MouseAdapter {
+		@Override
+		public void mouseClicked(MouseEvent e) {
+			super.mouseClicked(e);
+
+			Point mousePosition = e.getPoint();
+
+			Point2D mapCoordinates = new Point2D.Float();
+			try {
+				AffineTransform inverse = coordTransform.createInverse();
+				inverse.transform(mousePosition, mapCoordinates);
+			} catch (NoninvertibleTransformException e1) {
+				e1.printStackTrace();
+			}
+
+			NoteDlg noteDlg = new NoteDlg(saveGame.getAtmosphere(), mapCoordinates);
+
+			Point locationOnScreen = e.getLocationOnScreen();
+			noteDlg.setLocation(locationOnScreen);
+			noteDlg.setVisible(true);
+
+		}
+	}
+
+	private NoteInfoWindow noteInfoWindow;
+
 	private class MouseMotionListener extends MouseMotionAdapter {
 
 		@Override
 		public void mouseMoved(MouseEvent e) {
 			if (terrainGeneration == null) return;
+			hoveredTerrainNode = null;
+			popup = null;
+			noteInfoWindow = null;
 
 			Point mousePosition = e.getPoint();
 
@@ -480,8 +589,15 @@ public class MapView extends JPanel implements IslandLoadListener {
 				e1.printStackTrace();
 			}
 
-			hoveredTerrainNode = null;
-			popup = null;
+			Note noteAt = noteManager.getNoteAt(mouseOnMap, 16);
+			if (noteAt != null) {
+				noteInfoWindow = new NoteInfoWindow();
+				noteInfoWindow.note = noteAt;
+				noteInfoWindow.bounds = new Rectangle(mousePosition);
+				repaint();
+				return;
+			}
+
 			ArrayList<TerrainNode> terrainNodes = terrainGeneration.getTerrainNodes();
 			for (TerrainNode terrainNode : terrainNodes) {
 				Position positionOffset = terrainNode.getPositionOffset();
@@ -540,11 +656,12 @@ public class MapView extends JPanel implements IslandLoadListener {
 		private String[] lines;
 	}
 
-	public void setTerrainGeneration(TerrainGeneration terrainGeneration) {
-		setTerrainGeneration(terrainGeneration, false);
+	private class NoteInfoWindow {
+		private Rectangle bounds;
+		private Note note;
 	}
 
-	public void setTerrainGeneration(TerrainGeneration terrainGeneration, boolean resetView) {
+	private void setTerrainGeneration(TerrainGeneration terrainGeneration) {
 		this.terrainGeneration = terrainGeneration;
 
 		String directory = "worlds/" + terrainGeneration.getWorldSeed() + "/";
@@ -557,10 +674,7 @@ public class MapView extends JPanel implements IslandLoadListener {
 			}
 		}
 
-		if (resetView)
-			resetView();
-		else
-			repaint();
+		repaint();
 	}
 
 	public boolean isShowInfo() {
@@ -608,6 +722,17 @@ public class MapView extends JPanel implements IslandLoadListener {
 	public void onIslandLoaded(TerrainNode node, BufferedImage islandShape) {
 		islandShapes.put(node.getName(), islandShape);
 		repaint();
+	}
+
+	/** @param saveGame */
+	public void setSaveGame(SaveGame saveGame) {
+		this.saveGame = saveGame;
+		setTerrainGeneration(saveGame.getTerrainGeneration());
+	}
+
+	/** @param noteManager */
+	public void setNoteManager(NoteManager noteManager) {
+		this.noteManager = noteManager;
 	}
 
 }

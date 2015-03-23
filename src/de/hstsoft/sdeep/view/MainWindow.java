@@ -17,12 +17,14 @@ import javax.swing.JFrame;
 import javax.swing.JMenu;
 import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
+import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
 import javax.swing.UnsupportedLookAndFeelException;
 
 import org.json.simple.parser.ParseException;
 
 import de.hstsoft.sdeep.Configuration;
+import de.hstsoft.sdeep.NoteManager;
 import de.hstsoft.sdeep.SaveGameParser;
 import de.hstsoft.sdeep.model.SaveGame;
 import de.hstsoft.sdeep.util.FileWatcher;
@@ -55,8 +57,9 @@ public class MainWindow extends JFrame {
 				// TODO get rid of the sleep. queue a task or something and ignore multiple parse requests if one
 				// request is in the queue.
 				Thread.sleep(250);
-				SaveGame parse = new SaveGameParser().parse(file);
-				mapView.setTerrainGeneration(parse.getTerrainGeneration());
+				SaveGame saveGame = new SaveGameParser().parse(file);
+				mapView.setSaveGame(saveGame);
+				// mapView.setTerrainGeneration(parse.getTerrainGeneration());
 			} catch (IOException e) {
 				e.printStackTrace();
 			} catch (InterruptedException e) {
@@ -93,10 +96,16 @@ public class MainWindow extends JFrame {
 		}
 		try {
 			SaveGame saveGame = new SaveGameParser().parse(file);
-			mapView.setTerrainGeneration(saveGame.getTerrainGeneration(), true);
+			NoteManager noteManager = new NoteManager(saveGame.getTerrainGeneration().getWorldSeed());
+
+			noteManager.loadNotes();
+
+			mapView.setNoteManager(noteManager);
+			mapView.setSaveGame(saveGame);
+			mapView.resetView();
 			configuration.setSaveGamePath(saveGame.getPath());
 			toggleAutoRefresh(configuration.isAutorefresh());
-		} catch (IOException e) {
+		} catch (IOException | ParseException e) {
 			e.printStackTrace();
 		}
 	}
@@ -237,11 +246,17 @@ public class MainWindow extends JFrame {
 			e.printStackTrace();
 		}
 
-		MainWindow mainWindow = new MainWindow();
-		mainWindow.createUI();
-		mainWindow.setSize(1024, 768);
-		mainWindow.loadConfiguration();
-		mainWindow.setVisible(true);
+		SwingUtilities.invokeLater(new Runnable() {
+
+			@Override
+			public void run() {
+				MainWindow mainWindow = new MainWindow();
+				mainWindow.createUI();
+				mainWindow.setSize(1024, 768);
+				mainWindow.loadConfiguration();
+				mainWindow.setVisible(true);
+			}
+		});
 
 	}
 
