@@ -13,6 +13,7 @@ import java.awt.Image;
 import java.awt.Point;
 import java.awt.Rectangle;
 import java.awt.RenderingHints;
+import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseMotionAdapter;
 import java.awt.geom.AffineTransform;
@@ -30,8 +31,11 @@ import java.util.concurrent.ConcurrentHashMap;
 import javax.swing.JPanel;
 
 import de.hstsoft.sdeep.ItemTypes;
+import de.hstsoft.sdeep.NoteManager;
 import de.hstsoft.sdeep.model.GameObject;
+import de.hstsoft.sdeep.model.Note;
 import de.hstsoft.sdeep.model.Position;
+import de.hstsoft.sdeep.model.SaveGame;
 import de.hstsoft.sdeep.model.TerrainGeneration;
 import de.hstsoft.sdeep.model.TerrainNode;
 
@@ -50,6 +54,7 @@ public class MapView extends JPanel implements IslandLoadListener {
 
 	private boolean showInfo = false;
 	private boolean showGrid = true;
+	private boolean showNotes = true;
 
 	private boolean init = true;
 
@@ -60,11 +65,17 @@ public class MapView extends JPanel implements IslandLoadListener {
 
 	private FontMetrics fontMetrics;
 
-	private InfoWindow popup;
+	private ItemInfoWindow itemInfoWindow;
+
+	private NoteInfoWindow noteInfoWindow;
 
 	private double rotation = Math.toRadians(45);
 
 	private AffineTransform identity = new AffineTransform();
+
+	private SaveGame saveGame;
+
+	private NoteManager noteManager;
 
 	public static class ImageFactory {
 
@@ -82,11 +93,14 @@ public class MapView extends JPanel implements IslandLoadListener {
 	public MapView() {
 		super(true);
 
+		this.setLayout(null);
+
 		this.zoomAndPanListener = new ZoomAndPanListener(this);
 		this.addMouseListener(zoomAndPanListener);
 		this.addMouseMotionListener(zoomAndPanListener);
 		this.addMouseWheelListener(zoomAndPanListener);
 		this.addMouseMotionListener(new MouseMotionListener());
+		this.addMouseListener(new MouseClickListener());
 
 		islandShapeGenerationManager = new IslandShapeGenerationManager(this);
 
@@ -97,6 +111,8 @@ public class MapView extends JPanel implements IslandLoadListener {
 
 			images.put("ISLAND", ImageFactory.createImage("/de/hstsoft/sdeep/res/island.png", 256, 256));
 			images.put("ISLAND_UNDISCOVERED", ImageFactory.createImage("/de/hstsoft/sdeep/res/island_undiscovered.png", 128, 128));
+
+			images.put("NOTE", ImageFactory.createImage("/de/hstsoft/sdeep/res/note.png", 16, 16));
 
 			images.put(ItemTypes.SHARK_TIGER, ImageFactory.createImage("/de/hstsoft/sdeep/res/shark_tiger.png", 8, 8));
 			images.put(ItemTypes.SHARK_REEF, ImageFactory.createImage("/de/hstsoft/sdeep/res/shark_reef.png", 8, 8));
@@ -273,6 +289,8 @@ public class MapView extends JPanel implements IslandLoadListener {
 			// draw the objects
 			drawObjects(g2, terrainNodes);
 
+			if (showNotes) drawNotes(g2);
+
 			Position worldOrigin = terrainGeneration.getWorldOrigin();
 			Position playerPosition = terrainGeneration.getPlayerPosition();
 			final int playerX = (int) (worldOrigin.x - playerPosition.x);
@@ -308,34 +326,12 @@ public class MapView extends JPanel implements IslandLoadListener {
 		g2.setRenderingHints(new RenderingHints(RenderingHints.KEY_INTERPOLATION,
 				RenderingHints.VALUE_INTERPOLATION_NEAREST_NEIGHBOR));
 
-		// set the default transform to draw the popup and stuff
+		// set the default transform to draw the itemInfoPopup
 		g2.setTransform(identity);
-		if (popup != null) {
-			g2.setColor(new Color(0, 0, 0, 150));
-			g2.fill(popup.bounds);
+		if (itemInfoWindow != null) drawItemInfoWindow(g2, itemInfoWindow);
 
-			int lineHeight = fontMetrics.getHeight();
-			int startX = popup.bounds.x + 5;
-			int startY = popup.bounds.y + lineHeight;
-
-			g2.setColor(new Color(0, 0, 0, 200));
-			g2.fillRect(popup.bounds.x - lineHeight - 4, popup.bounds.y, lineHeight + 4, popup.bounds.height);
-			String[] lines = popup.lines;
-			for (int i = 0; i < lines.length; i++) {
-
-				if (images.containsKey(lines[i].split("x ")[1])) {
-					ItemImage image = images.get(lines[i].split("x ")[1]);
-					g2.drawImage(image.getImage(), startX - lineHeight - 7, startY + (lineHeight * i) - lineHeight + 3,
-							lineHeight, lineHeight, null);
-				} else {
-					g2.setColor(Color.GREEN);
-					g2.fillOval(startX - lineHeight - 4, startY + (lineHeight * i) - lineHeight + 6, 10, 10);
-				}
-				g2.setColor(Color.WHITE);
-				g2.drawString(lines[i], startX, startY + (lineHeight * i));
-			}
-
-		}
+		g2.setTransform(identity);
+		if (noteInfoWindow != null && showNotes) drawNoteInfoWindow(g2, noteInfoWindow);
 
 		String zoomStr = String.format("zoomLevel: %d", zoomAndPanListener.getZoomLevel());
 		String mapPos = String.format("mapPos: %.1f/%.1f", mouseOnMap.getX(), mouseOnMap.getY());
@@ -358,6 +354,99 @@ public class MapView extends JPanel implements IslandLoadListener {
 
 		g2.dispose();
 
+	}
+
+	private void drawItemInfoWindow(Graphics2D g2, ItemInfoWindow itemInfo) {
+		g2.setColor(new Color(0, 0, 0, 150));
+		g2.fill(itemInfo.bounds);
+
+		int lineHeight = fontMetrics.getHeight();
+		int startX = itemInfo.bounds.x + 5;
+		int startY = itemInfo.bounds.y + lineHeight;
+
+		g2.setColor(new Color(0, 0, 0, 200));
+		g2.fillRect(itemInfo.bounds.x - lineHeight - 4, itemInfo.bounds.y, lineHeight + 4, itemInfo.bounds.height);
+		String[] lines = itemInfo.lines;
+		for (int i = 0; i < lines.length; i++) {
+
+			if (images.containsKey(lines[i].split("x ")[1])) {
+				ItemImage image = images.get(lines[i].split("x ")[1]);
+				g2.drawImage(image.getImage(), startX - lineHeight - 7, startY + (lineHeight * i) - lineHeight + 3, lineHeight,
+						lineHeight, null);
+			} else {
+				g2.setColor(Color.GREEN);
+				g2.fillOval(startX - lineHeight - 4, startY + (lineHeight * i) - lineHeight + 6, 10, 10);
+			}
+			g2.setColor(Color.WHITE);
+			g2.drawString(lines[i], startX, startY + (lineHeight * i));
+		}
+	}
+
+	private void drawNoteInfoWindow(Graphics2D g2, NoteInfoWindow info) {
+
+		int lineHeight = fontMetrics.getHeight();
+
+		String lines[] = info.note.getText().split("\n");
+
+		// calculate the width and height
+		info.bounds.width = fontMetrics.stringWidth(info.note.getTitle()) + 10;
+		for (int i = 0; i < lines.length; i++) {
+			info.bounds.width = Math.max(info.bounds.width, fontMetrics.stringWidth(lines[i] + 10));
+		}
+		info.bounds.height = (lines.length * lineHeight) + lineHeight + 10;
+
+		// move the window to the left and top of the mouse pointer
+		info.bounds.x = info.bounds.x - info.bounds.width;
+		info.bounds.y = info.bounds.y - info.bounds.height;
+
+		// draw the background
+		g2.setColor(new Color(0, 0, 0, 150));
+		g2.fill(info.bounds);
+
+		g2.setColor(new Color(0, 0, 0, 80));
+		g2.fillRect(info.bounds.x, info.bounds.y, info.bounds.width, lineHeight + 4);
+
+		// draw the note title and text
+		int startX = info.bounds.x + 5;
+		int startY = info.bounds.y + lineHeight;
+		g2.setColor(Color.WHITE);
+		g2.drawString(info.note.getTitle(), startX, startY);
+		startY += lineHeight;
+		for (int i = 0; i < lines.length; i++) {
+			g2.drawString(lines[i], startX, startY + 5 + (i * lineHeight));
+		}
+
+	}
+
+	private void drawNotes(Graphics2D g2) {
+		AffineTransform t = new AffineTransform();
+		ArrayList<Note> notes = noteManager.getNotes();
+		for (Note note : notes) {
+
+			AffineTransform originalTransform = g2.getTransform();
+
+			// if (images.containsKey(gameObject.getType())) {
+			double worldX = note.getPosition().getX();
+			double worldZ = note.getPosition().getY();
+
+			ItemImage image = images.get("NOTE");
+
+			t.setToIdentity();
+			t.translate(worldX, worldZ);
+			// rotate the the canvas back to draw the object images aligned with the x-axis
+			if (image.isAxisAligned()) t.rotate(-rotation);
+			t.scale(-1, 1);
+			g2.transform(t);
+
+			g2.drawImage(image.getImage(), -image.getWidth() / 2, -image.getHeight() / 2, image.getWidth(), image.getHeight(),
+					null);
+
+			g2.setColor(Color.DARK_GRAY);
+			g2.drawString(note.getTitle(), 8, 4);
+
+			g2.setTransform(originalTransform);
+
+		}
 	}
 
 	private void drawTerrain(Graphics2D g2, ArrayList<TerrainNode> terrainNodes) {
@@ -465,11 +554,44 @@ public class MapView extends JPanel implements IslandLoadListener {
 		}
 	}
 
+	private class MouseClickListener extends MouseAdapter {
+		@Override
+		public void mouseClicked(MouseEvent e) {
+			super.mouseClicked(e);
+
+			Point mousePosition = e.getPoint();
+
+			Point2D mapCoordinates = new Point2D.Float();
+			try {
+				AffineTransform inverse = coordTransform.createInverse();
+				inverse.transform(mousePosition, mapCoordinates);
+			} catch (NoninvertibleTransformException e1) {
+				e1.printStackTrace();
+			}
+
+			NoteDlg noteDlg;
+			Note noteAt = noteManager.getNoteAt(mapCoordinates, 16);
+			if (noteAt != null) {
+				noteDlg = new NoteDlg(noteManager, noteAt);
+			} else {
+				noteDlg = new NoteDlg(noteManager, saveGame.getAtmosphere(), mapCoordinates);
+			}
+
+			Point locationOnScreen = e.getLocationOnScreen();
+			noteDlg.setLocation(locationOnScreen);
+			noteDlg.setVisible(true);
+
+		}
+	}
+
 	private class MouseMotionListener extends MouseMotionAdapter {
 
 		@Override
 		public void mouseMoved(MouseEvent e) {
 			if (terrainGeneration == null) return;
+			hoveredTerrainNode = null;
+			itemInfoWindow = null;
+			noteInfoWindow = null;
 
 			Point mousePosition = e.getPoint();
 
@@ -480,8 +602,15 @@ public class MapView extends JPanel implements IslandLoadListener {
 				e1.printStackTrace();
 			}
 
-			hoveredTerrainNode = null;
-			popup = null;
+			Note noteAt = noteManager.getNoteAt(mouseOnMap, 16);
+			if (noteAt != null) {
+				noteInfoWindow = new NoteInfoWindow();
+				noteInfoWindow.note = noteAt;
+				noteInfoWindow.bounds = new Rectangle(mousePosition);
+				// repaint();
+				// return;
+			}
+
 			ArrayList<TerrainNode> terrainNodes = terrainGeneration.getTerrainNodes();
 			for (TerrainNode terrainNode : terrainNodes) {
 				Position positionOffset = terrainNode.getPositionOffset();
@@ -513,20 +642,20 @@ public class MapView extends JPanel implements IslandLoadListener {
 				}
 
 				if (!objCount.isEmpty()) {
-					popup = new InfoWindow();
-					popup.lines = new String[objCount.size()];
+					itemInfoWindow = new ItemInfoWindow();
+					itemInfoWindow.lines = new String[objCount.size()];
 					final int lineHeight = fontMetrics.getHeight();
 					final int totalHeight = (lineHeight) * objCount.size();
 					int width = 0;
 					int i = 0;
 					for (Entry<String, Integer> entry : objCount.entrySet()) {
-						popup.lines[i] = entry.getValue().intValue() + "x " + entry.getKey();
-						width = Math.max(width, fontMetrics.stringWidth(popup.lines[i]));
+						itemInfoWindow.lines[i] = entry.getValue().intValue() + "x " + entry.getKey();
+						width = Math.max(width, fontMetrics.stringWidth(itemInfoWindow.lines[i]));
 						i++;
 					}
 					Rectangle infoBounds = new Rectangle(mousePosition.x - width - 15, mousePosition.y - totalHeight - 5,
 							width + 10, totalHeight + 5);
-					popup.bounds = infoBounds;
+					itemInfoWindow.bounds = infoBounds;
 					repaint();
 				}
 
@@ -535,16 +664,17 @@ public class MapView extends JPanel implements IslandLoadListener {
 		}
 	}
 
-	private class InfoWindow {
+	private class ItemInfoWindow {
 		private Rectangle bounds;
 		private String[] lines;
 	}
 
-	public void setTerrainGeneration(TerrainGeneration terrainGeneration) {
-		setTerrainGeneration(terrainGeneration, false);
+	private class NoteInfoWindow {
+		private Rectangle bounds;
+		private Note note;
 	}
 
-	public void setTerrainGeneration(TerrainGeneration terrainGeneration, boolean resetView) {
+	private void setTerrainGeneration(TerrainGeneration terrainGeneration) {
 		this.terrainGeneration = terrainGeneration;
 
 		String directory = "worlds/" + terrainGeneration.getWorldSeed() + "/";
@@ -557,10 +687,7 @@ public class MapView extends JPanel implements IslandLoadListener {
 			}
 		}
 
-		if (resetView)
-			resetView();
-		else
-			repaint();
+		repaint();
 	}
 
 	public boolean isShowInfo() {
@@ -578,6 +705,15 @@ public class MapView extends JPanel implements IslandLoadListener {
 
 	public void setShowGrid(boolean showGrid) {
 		this.showGrid = showGrid;
+		repaint();
+	}
+
+	public boolean isShowNotes() {
+		return this.showNotes;
+	}
+
+	public void setShowNotes(boolean showNotes) {
+		this.showNotes = showNotes;
 		repaint();
 	}
 
@@ -608,6 +744,17 @@ public class MapView extends JPanel implements IslandLoadListener {
 	public void onIslandLoaded(TerrainNode node, BufferedImage islandShape) {
 		islandShapes.put(node.getName(), islandShape);
 		repaint();
+	}
+
+	/** @param saveGame */
+	public void setSaveGame(SaveGame saveGame) {
+		this.saveGame = saveGame;
+		setTerrainGeneration(saveGame.getTerrainGeneration());
+	}
+
+	/** @param noteManager */
+	public void setNoteManager(NoteManager noteManager) {
+		this.noteManager = noteManager;
 	}
 
 }
