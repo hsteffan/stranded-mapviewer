@@ -38,6 +38,7 @@ import de.hstsoft.sdeep.model.Position;
 import de.hstsoft.sdeep.model.SaveGame;
 import de.hstsoft.sdeep.model.TerrainGeneration;
 import de.hstsoft.sdeep.model.TerrainNode;
+import de.hstsoft.sdeep.view.ZoomAndPanListener.ZoomPanRotationChangedListener;
 
 /** @author Holger Steffan created: 26.02.2015 */
 public class MapView extends JPanel implements IslandLoadListener {
@@ -56,7 +57,7 @@ public class MapView extends JPanel implements IslandLoadListener {
 	private boolean showGrid = true;
 	private boolean showNotes = true;
 
-	private boolean init = true;
+	private boolean initialized = false;
 
 	private AffineTransform coordTransform;
 	private Point2D mouseOnMap = new Point2D.Float();
@@ -71,11 +72,33 @@ public class MapView extends JPanel implements IslandLoadListener {
 
 	private double rotation = Math.toRadians(45);
 
-	private AffineTransform identity = new AffineTransform();
+	private AffineTransform defaultTransform = new AffineTransform();
 
 	private SaveGame saveGame;
 
 	private NoteManager noteManager;
+
+	private BufferedImage bufferedMapImage;
+
+	private boolean isMapDirty;
+
+	/** @author Holger Steffan created: 24.03.2015 */
+	private final class ZoomPanRotationChangedListenerImpl implements ZoomPanRotationChangedListener {
+		@Override
+		public void onZoomChanged(ZoomAndPanListener source) {
+			isMapDirty = true;
+		}
+
+		@Override
+		public void onRotationChanged(ZoomAndPanListener source) {
+			isMapDirty = true;
+		}
+
+		@Override
+		public void onPanChanged(ZoomAndPanListener source) {
+			isMapDirty = true;
+		}
+	}
 
 	public static class ImageFactory {
 
@@ -96,6 +119,8 @@ public class MapView extends JPanel implements IslandLoadListener {
 		this.setLayout(null);
 
 		this.zoomAndPanListener = new ZoomAndPanListener(this);
+		this.zoomAndPanListener.setListener(new ZoomPanRotationChangedListenerImpl());
+
 		this.addMouseListener(zoomAndPanListener);
 		this.addMouseMotionListener(zoomAndPanListener);
 		this.addMouseWheelListener(zoomAndPanListener);
@@ -227,40 +252,25 @@ public class MapView extends JPanel implements IslandLoadListener {
 
 		Graphics2D g2 = (Graphics2D) g.create();
 
-		identity = g2.getTransform();
+		defaultTransform = g2.getTransform();
 		g2.setRenderingHints(new RenderingHints(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_OFF));
 		// g2.setRenderingHints(new RenderingHints(RenderingHints.KEY_INTERPOLATION,
 		// RenderingHints.VALUE_INTERPOLATION_BILINEAR));
 
-		BufferedImage map = drawMap(getWidth(), getHeight());
-		g2.drawImage(map, 0, 0, null);
+		if (bufferedMapImage == null || isMapDirty) {
+			bufferedMapImage = drawMap(getWidth(), getHeight());
+			isMapDirty = false;
+		}
+		g2.drawImage(bufferedMapImage, 0, 0, null);
 
-		g2.setTransform(identity);
-		AffineTransform transform = g2.getTransform();
-
-		// drawCompass
-		g2.setRenderingHints(new RenderingHints(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR));
-		final int centerX = getWidth() - 70 - 10;
-		final int centerY = 10 + 70;
-		transform.translate(centerX, centerY);
-		transform.rotate(-rotation - (Math.toRadians(-45)));
-		g2.setTransform(transform);
-		ItemImage compassImg = images.get("COMPASS_RING");
-		g2.drawImage(compassImg.getImage(), -compassImg.getWidth() / 2, -compassImg.getHeight() / 2, compassImg.getWidth(),
-				compassImg.getHeight(), null);
-		transform.rotate(rotation - (Math.toRadians(45)));
-		g2.setTransform(transform);
-		ItemImage needleImg = images.get("COMPASS_NEEDLE");
-		g2.drawImage(needleImg.getImage(), -needleImg.getWidth() / 2, -needleImg.getHeight() / 2, needleImg.getWidth(),
-				needleImg.getHeight(), null);
-		g2.setRenderingHints(new RenderingHints(RenderingHints.KEY_INTERPOLATION,
-				RenderingHints.VALUE_INTERPOLATION_NEAREST_NEIGHBOR));
+		g2.setTransform(defaultTransform);
+		drawCompass(g2);
 
 		// set the default transform to draw the itemInfoPopup
-		g2.setTransform(identity);
+		g2.setTransform(defaultTransform);
 		if (itemInfoWindow != null) drawItemInfoWindow(g2, itemInfoWindow);
 
-		g2.setTransform(identity);
+		g2.setTransform(defaultTransform);
 		if (noteInfoWindow != null && showNotes) drawNoteInfoWindow(g2, noteInfoWindow);
 
 		String zoomStr = String.format("zoomLevel: %d", zoomAndPanListener.getZoomLevel());
@@ -286,6 +296,28 @@ public class MapView extends JPanel implements IslandLoadListener {
 
 	}
 
+	private void drawCompass(Graphics2D g2) {
+		AffineTransform transform = g2.getTransform();
+
+		// drawCompass
+		g2.setRenderingHints(new RenderingHints(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR));
+		final int centerX = getWidth() - 70 - 10;
+		final int centerY = 10 + 70;
+		transform.translate(centerX, centerY);
+		transform.rotate(-rotation - (Math.toRadians(-45)));
+		g2.setTransform(transform);
+		ItemImage compassImg = images.get("COMPASS_RING");
+		g2.drawImage(compassImg.getImage(), -compassImg.getWidth() / 2, -compassImg.getHeight() / 2, compassImg.getWidth(),
+				compassImg.getHeight(), null);
+		transform.rotate(rotation - (Math.toRadians(45)));
+		g2.setTransform(transform);
+		ItemImage needleImg = images.get("COMPASS_NEEDLE");
+		g2.drawImage(needleImg.getImage(), -needleImg.getWidth() / 2, -needleImg.getHeight() / 2, needleImg.getWidth(),
+				needleImg.getHeight(), null);
+		g2.setRenderingHints(new RenderingHints(RenderingHints.KEY_INTERPOLATION,
+				RenderingHints.VALUE_INTERPOLATION_NEAREST_NEIGHBOR));
+	}
+
 	private BufferedImage drawMap(int width, int height) {
 
 		BufferedImage image = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
@@ -294,18 +326,17 @@ public class MapView extends JPanel implements IslandLoadListener {
 		g2.setColor(new Color(105, 155, 195));
 		g2.fillRect(0, 0, width, height);
 
-		if (init) {
+		if (!initialized) {
 			// Initialize the viewport by moving the origin to the center of the window.
-			System.out.println("W:" + width + " H:" + height);
-			init = false;
+			initialized = true;
 			final int xc = width / 2;
 			final int yc = height / 2;
 			fontMetrics = g2.getFontMetrics();
 
-			AffineTransform affineTransform = g2.getTransform();
+			AffineTransform affineTransform = new AffineTransform();
 			affineTransform.translate(xc, yc);
 			affineTransform.scale(-1, 1);
-			affineTransform.rotate(rotation);
+			affineTransform.rotate(Math.toRadians(45));
 
 			if (terrainGeneration != null) {
 				Position worldOrigin = terrainGeneration.getWorldOrigin();
@@ -316,39 +347,23 @@ public class MapView extends JPanel implements IslandLoadListener {
 				affineTransform.translate(-playerOnScreen.getX(), -playerOnScreen.getY());
 			}
 			// Save the viewport to be updated by the ZoomAndPanListener
+			zoomAndPanListener.setZoomLevel(0);
 			zoomAndPanListener.setCoordTransform(affineTransform);
 		}
 
-		if (terrainGeneration == null) {
-			Font saveFont = g2.getFont();
-			g2.setRenderingHints(new RenderingHints(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON));
-			g2.setColor(Color.BLACK);
-			g2.setFont(new Font("Arial", Font.PLAIN, 28));
-			String str = "Please use the file menu to load a save game file.";
-			int w = g2.getFontMetrics().stringWidth(str);
-			g2.drawString(str, width / 2 - w / 2, height / 2);
-
-			g2.setFont(new Font("Arial", Font.ITALIC, 14));
-			str = "(The save game file can be found at <Stranded Deep installation folder>\\Stranded_Deep_x64_Data\\Data\\Save.json)";
-			w = g2.getFontMetrics().stringWidth(str);
-			g2.drawString(str, width / 2 - w / 2, height / 2 + 20);
-			g2.setFont(saveFont);
-		}
-
-		// Restore the viewport after it was updated by the ZoomAndPanListener
-		this.coordTransform = zoomAndPanListener.getCoordTransform();
-		this.rotation = zoomAndPanListener.getRotation();
-		g2.setTransform(coordTransform);
-
 		if (terrainGeneration != null) {
+			// Restore the viewport after it was updated by the ZoomAndPanListener
+			this.coordTransform = zoomAndPanListener.getCoordTransform();
+			this.rotation = zoomAndPanListener.getRotation();
+			g2.setTransform(coordTransform);
 
 			ArrayList<TerrainNode> terrainNodes = terrainGeneration.getTerrainNodes();
-			// draw the island ground
+			// draw the island shape
 			drawTerrain(g2, terrainNodes);
 			// draw the objects
 			drawObjects(g2, terrainNodes);
 
-			if (showNotes) drawNotes(g2);
+			if (showNotes) drawNotes(g2, noteManager.getNotes());
 
 			Position worldOrigin = terrainGeneration.getWorldOrigin();
 			Position playerPosition = terrainGeneration.getPlayerPosition();
@@ -363,6 +378,20 @@ public class MapView extends JPanel implements IslandLoadListener {
 			g2.setColor(Color.RED);
 			g2.fillOval(playerX - 3, playerZ - 3, 6, 6);
 
+		} else {
+			Font saveFont = g2.getFont();
+			g2.setRenderingHints(new RenderingHints(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON));
+			g2.setColor(Color.BLACK);
+			g2.setFont(new Font("Arial", Font.PLAIN, 28));
+			String str = "Please use the file menu to load a save game file.";
+			int w = g2.getFontMetrics().stringWidth(str);
+			g2.drawString(str, width / 2 - w / 2, height / 2);
+
+			g2.setFont(new Font("Arial", Font.ITALIC, 14));
+			str = "(The save game file can be found at <Stranded Deep installation folder>\\Stranded_Deep_x64_Data\\Data\\Save.json)";
+			w = g2.getFontMetrics().stringWidth(str);
+			g2.drawString(str, width / 2 - w / 2, height / 2 + 20);
+			g2.setFont(saveFont);
 		}
 		return image;
 	}
@@ -429,9 +458,8 @@ public class MapView extends JPanel implements IslandLoadListener {
 
 	}
 
-	private void drawNotes(Graphics2D g2) {
+	private void drawNotes(Graphics2D g2, ArrayList<Note> notes) {
 		AffineTransform t = new AffineTransform();
-		ArrayList<Note> notes = noteManager.getNotes();
 		for (Note note : notes) {
 
 			AffineTransform originalTransform = g2.getTransform();
@@ -599,7 +627,7 @@ public class MapView extends JPanel implements IslandLoadListener {
 
 		@Override
 		public void mouseMoved(MouseEvent e) {
-			if (terrainGeneration == null) return;
+			if (terrainGeneration == null || !initialized) return;
 			hoveredTerrainNode = null;
 			itemInfoWindow = null;
 			noteInfoWindow = null;
@@ -618,8 +646,6 @@ public class MapView extends JPanel implements IslandLoadListener {
 				noteInfoWindow = new NoteInfoWindow();
 				noteInfoWindow.note = noteAt;
 				noteInfoWindow.bounds = new Rectangle(mousePosition);
-				// repaint();
-				// return;
 			}
 
 			ArrayList<TerrainNode> terrainNodes = terrainGeneration.getTerrainNodes();
@@ -687,6 +713,7 @@ public class MapView extends JPanel implements IslandLoadListener {
 
 	private void setTerrainGeneration(TerrainGeneration terrainGeneration) {
 		this.terrainGeneration = terrainGeneration;
+		isMapDirty = true;
 
 		String directory = "worlds/" + terrainGeneration.getWorldSeed() + "/";
 
@@ -697,7 +724,6 @@ public class MapView extends JPanel implements IslandLoadListener {
 				islandShapeGenerationManager.enqueue(new IslandShapeGenerationTask(node, directory));
 			}
 		}
-
 		repaint();
 	}
 
@@ -707,6 +733,7 @@ public class MapView extends JPanel implements IslandLoadListener {
 
 	public void setShowInfo(boolean showInfo) {
 		this.showInfo = showInfo;
+		isMapDirty = true;
 		repaint();
 	}
 
@@ -716,6 +743,7 @@ public class MapView extends JPanel implements IslandLoadListener {
 
 	public void setShowGrid(boolean showGrid) {
 		this.showGrid = showGrid;
+		isMapDirty = true;
 		repaint();
 	}
 
@@ -725,35 +753,20 @@ public class MapView extends JPanel implements IslandLoadListener {
 
 	public void setShowNotes(boolean showNotes) {
 		this.showNotes = showNotes;
+		isMapDirty = true;
 		repaint();
 	}
 
 	public void resetView() {
-		int xc = getWidth() / 2;
-		int yc = getHeight() / 2;
-
-		AffineTransform affineTransform = new AffineTransform();
-		affineTransform.translate(xc, yc);
-		affineTransform.scale(-1, 1);
-		affineTransform.rotate(Math.toRadians(45));
-
-		if (terrainGeneration != null) {
-			Position worldOrigin = terrainGeneration.getWorldOrigin();
-			Position playerPosition = terrainGeneration.getPlayerPosition();
-			final int playerX = (int) (worldOrigin.x - playerPosition.x);
-			final int playerZ = (int) (worldOrigin.z - playerPosition.z);
-			Point2D playerOnScreen = new Point2D.Float(playerX, playerZ);
-			affineTransform.translate(-playerOnScreen.getX(), -playerOnScreen.getY());
-		}
-		zoomAndPanListener.setZoomLevel(0);
-		zoomAndPanListener.setCoordTransform(affineTransform);
-		init = true;
+		initialized = false;
+		isMapDirty = true;
 		repaint();
 	}
 
 	@Override
 	public void onIslandLoaded(TerrainNode node, BufferedImage islandShape) {
 		islandShapes.put(node.getName(), islandShape);
+		isMapDirty = true;
 		repaint();
 	}
 
