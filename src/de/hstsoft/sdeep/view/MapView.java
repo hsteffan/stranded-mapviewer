@@ -232,79 +232,9 @@ public class MapView extends JPanel implements IslandLoadListener {
 		// g2.setRenderingHints(new RenderingHints(RenderingHints.KEY_INTERPOLATION,
 		// RenderingHints.VALUE_INTERPOLATION_BILINEAR));
 
-		g2.setColor(new Color(105, 155, 195));
-		g2.fillRect(0, 0, getWidth(), getHeight());
+		BufferedImage map = drawMap(getWidth(), getHeight());
+		g2.drawImage(map, 0, 0, null);
 
-		if (init) {
-			// Initialize the viewport by moving the origin to the center of the window.
-			System.out.println("W:" + getWidth() + " H:" + getHeight());
-			init = false;
-			final int xc = getWidth() / 2;
-			final int yc = getHeight() / 2;
-			fontMetrics = g2.getFontMetrics();
-
-			AffineTransform affineTransform = g2.getTransform();
-			affineTransform.translate(xc, yc);
-			affineTransform.scale(-1, 1);
-			affineTransform.rotate(rotation);
-
-			if (terrainGeneration != null) {
-				Position worldOrigin = terrainGeneration.getWorldOrigin();
-				Position playerPosition = terrainGeneration.getPlayerPosition();
-				final int playerX = (int) (worldOrigin.x - playerPosition.x);
-				final int playerZ = (int) (worldOrigin.z - playerPosition.z);
-				Point2D playerOnScreen = new Point2D.Float(playerX, playerZ);
-				affineTransform.translate(-playerOnScreen.getX(), -playerOnScreen.getY());
-			}
-			// Save the viewport to be updated by the ZoomAndPanListener
-			zoomAndPanListener.setCoordTransform(affineTransform);
-		}
-
-		if (terrainGeneration == null) {
-			Font saveFont = g2.getFont();
-			g2.setRenderingHints(new RenderingHints(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON));
-			g2.setColor(Color.BLACK);
-			g2.setFont(new Font("Arial", Font.PLAIN, 28));
-			String str = "Please use the file menu to load a save game file.";
-			int w = g2.getFontMetrics().stringWidth(str);
-			g2.drawString(str, getWidth() / 2 - w / 2, getHeight() / 2);
-
-			g2.setFont(new Font("Arial", Font.ITALIC, 14));
-			str = "(The save game file can be found at <Stranded Deep installation folder>\\Stranded_Deep_x64_Data\\Data\\Save.json)";
-			w = g2.getFontMetrics().stringWidth(str);
-			g2.drawString(str, getWidth() / 2 - w / 2, getHeight() / 2 + 20);
-			g2.setFont(saveFont);
-		}
-
-		// Restore the viewport after it was updated by the ZoomAndPanListener
-		this.coordTransform = zoomAndPanListener.getCoordTransform();
-		this.rotation = zoomAndPanListener.getRotation();
-		g2.setTransform(coordTransform);
-
-		if (terrainGeneration != null) {
-
-			ArrayList<TerrainNode> terrainNodes = terrainGeneration.getTerrainNodes();
-			// draw the island ground
-			drawTerrain(g2, terrainNodes);
-			// draw the objects
-			drawObjects(g2, terrainNodes);
-
-			if (showNotes) drawNotes(g2);
-
-			Position worldOrigin = terrainGeneration.getWorldOrigin();
-			Position playerPosition = terrainGeneration.getPlayerPosition();
-			final int playerX = (int) (worldOrigin.x - playerPosition.x);
-			final int playerZ = (int) (worldOrigin.z - playerPosition.z);
-
-			if (showInfo) {
-				g2.setColor(Color.BLUE);
-				g2.fillOval((int) worldOrigin.x - 2, (int) worldOrigin.z - 2, 4, 4);
-			}
-
-			g2.setColor(Color.RED);
-			g2.fillOval(playerX - 3, playerZ - 3, 6, 6);
-
-		}
 		g2.setTransform(identity);
 		AffineTransform transform = g2.getTransform();
 
@@ -354,6 +284,87 @@ public class MapView extends JPanel implements IslandLoadListener {
 
 		g2.dispose();
 
+	}
+
+	private BufferedImage drawMap(int width, int height) {
+
+		BufferedImage image = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
+		Graphics2D g2 = image.createGraphics();
+
+		g2.setColor(new Color(105, 155, 195));
+		g2.fillRect(0, 0, width, height);
+
+		if (init) {
+			// Initialize the viewport by moving the origin to the center of the window.
+			System.out.println("W:" + width + " H:" + height);
+			init = false;
+			final int xc = width / 2;
+			final int yc = height / 2;
+			fontMetrics = g2.getFontMetrics();
+
+			AffineTransform affineTransform = g2.getTransform();
+			affineTransform.translate(xc, yc);
+			affineTransform.scale(-1, 1);
+			affineTransform.rotate(rotation);
+
+			if (terrainGeneration != null) {
+				Position worldOrigin = terrainGeneration.getWorldOrigin();
+				Position playerPosition = terrainGeneration.getPlayerPosition();
+				final int playerX = (int) (worldOrigin.x - playerPosition.x);
+				final int playerZ = (int) (worldOrigin.z - playerPosition.z);
+				Point2D playerOnScreen = new Point2D.Float(playerX, playerZ);
+				affineTransform.translate(-playerOnScreen.getX(), -playerOnScreen.getY());
+			}
+			// Save the viewport to be updated by the ZoomAndPanListener
+			zoomAndPanListener.setCoordTransform(affineTransform);
+		}
+
+		if (terrainGeneration == null) {
+			Font saveFont = g2.getFont();
+			g2.setRenderingHints(new RenderingHints(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON));
+			g2.setColor(Color.BLACK);
+			g2.setFont(new Font("Arial", Font.PLAIN, 28));
+			String str = "Please use the file menu to load a save game file.";
+			int w = g2.getFontMetrics().stringWidth(str);
+			g2.drawString(str, width / 2 - w / 2, height / 2);
+
+			g2.setFont(new Font("Arial", Font.ITALIC, 14));
+			str = "(The save game file can be found at <Stranded Deep installation folder>\\Stranded_Deep_x64_Data\\Data\\Save.json)";
+			w = g2.getFontMetrics().stringWidth(str);
+			g2.drawString(str, width / 2 - w / 2, height / 2 + 20);
+			g2.setFont(saveFont);
+		}
+
+		// Restore the viewport after it was updated by the ZoomAndPanListener
+		this.coordTransform = zoomAndPanListener.getCoordTransform();
+		this.rotation = zoomAndPanListener.getRotation();
+		g2.setTransform(coordTransform);
+
+		if (terrainGeneration != null) {
+
+			ArrayList<TerrainNode> terrainNodes = terrainGeneration.getTerrainNodes();
+			// draw the island ground
+			drawTerrain(g2, terrainNodes);
+			// draw the objects
+			drawObjects(g2, terrainNodes);
+
+			if (showNotes) drawNotes(g2);
+
+			Position worldOrigin = terrainGeneration.getWorldOrigin();
+			Position playerPosition = terrainGeneration.getPlayerPosition();
+			final int playerX = (int) (worldOrigin.x - playerPosition.x);
+			final int playerZ = (int) (worldOrigin.z - playerPosition.z);
+
+			if (showInfo) {
+				g2.setColor(Color.BLUE);
+				g2.fillOval((int) worldOrigin.x - 2, (int) worldOrigin.z - 2, 4, 4);
+			}
+
+			g2.setColor(Color.RED);
+			g2.fillOval(playerX - 3, playerZ - 3, 6, 6);
+
+		}
+		return image;
 	}
 
 	private void drawItemInfoWindow(Graphics2D g2, ItemInfoWindow itemInfo) {
