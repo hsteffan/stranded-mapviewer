@@ -13,11 +13,13 @@ import java.awt.Image;
 import java.awt.Point;
 import java.awt.Rectangle;
 import java.awt.RenderingHints;
+import java.awt.Shape;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseMotionAdapter;
 import java.awt.geom.AffineTransform;
 import java.awt.geom.NoninvertibleTransformException;
+import java.awt.geom.Path2D;
 import java.awt.geom.Point2D;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
@@ -347,11 +349,24 @@ public class MapView extends JPanel implements IslandLoadListener, ChangeListene
 			this.rotation = zoomAndPanListener.getRotation();
 			g2.setTransform(coordTransform);
 
-			ArrayList<TerrainNode> terrainNodes = terrainGeneration.getTerrainNodes();
-			// draw the island shape
-			drawTerrain(g2, terrainNodes);
-			// draw the objects
-			drawObjects(g2, terrainNodes);
+			try {
+				AffineTransform inverse = coordTransform.createInverse();
+
+				Path2D viewPort = new Path2D.Double();
+				viewPort.moveTo(0, 0);
+				viewPort.lineTo(width, 0);
+				viewPort.lineTo(width, height);
+				viewPort.lineTo(0, height);
+				viewPort.closePath();
+
+				Shape viewPortShape = inverse.createTransformedShape(viewPort);
+				ArrayList<TerrainNode> terrainNodes = terrainGeneration.getTerrainNodes(viewPortShape);
+				// draw the island shape
+				drawTerrain(g2, terrainNodes);
+				// draw the objects
+				drawObjects(g2, terrainNodes);
+			} catch (NoninvertibleTransformException e) {
+			}
 
 			if (showNotes) drawNotes(g2, noteManager.getNotes());
 

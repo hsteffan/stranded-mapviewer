@@ -4,6 +4,8 @@
  * package. */
 package de.hstsoft.sdeep.model;
 
+import java.awt.Shape;
+import java.awt.geom.Rectangle2D;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.Map;
@@ -65,6 +67,21 @@ public class TerrainGeneration {
 		}
 
 		return terrainGeneration;
+	}
+
+	public ArrayList<TerrainNode> getTerrainNodes(Shape shape) {
+
+		ArrayList<TerrainNode> retVal = new ArrayList<>();
+		for (TerrainNode node : terrainNodes) {
+
+			float x = node.getPositionOffset().x - 128;
+			float y = node.getPositionOffset().z - 128;
+			Rectangle2D terrainBounds = new Rectangle2D.Float(x, y, 256, 256);
+			boolean intersects = shape.intersects(terrainBounds);
+			if (intersects) retVal.add(node);
+		}
+
+		return retVal;
 	}
 
 }
