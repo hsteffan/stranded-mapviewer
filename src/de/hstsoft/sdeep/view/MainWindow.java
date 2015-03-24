@@ -96,10 +96,8 @@ public class MainWindow extends JFrame {
 		}
 		try {
 			SaveGame saveGame = new SaveGameParser().parse(file);
-			NoteManager noteManager = new NoteManager(saveGame.getTerrainGeneration().getWorldSeed());
-
+			NoteManager noteManager = new NoteManager(saveGame.getTerrainGeneration().getWorldSeed(), mapView);
 			noteManager.loadNotes();
-
 			mapView.setNoteManager(noteManager);
 			mapView.setSaveGame(saveGame);
 			mapView.resetView();

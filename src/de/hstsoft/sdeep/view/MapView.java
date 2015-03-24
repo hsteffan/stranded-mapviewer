@@ -32,6 +32,7 @@ import javax.swing.JPanel;
 
 import de.hstsoft.sdeep.ItemTypes;
 import de.hstsoft.sdeep.NoteManager;
+import de.hstsoft.sdeep.NoteManager.ChangeListener;
 import de.hstsoft.sdeep.model.GameObject;
 import de.hstsoft.sdeep.model.Note;
 import de.hstsoft.sdeep.model.Position;
@@ -41,7 +42,7 @@ import de.hstsoft.sdeep.model.TerrainNode;
 import de.hstsoft.sdeep.view.ZoomAndPanListener.ZoomPanRotationChangedListener;
 
 /** @author Holger Steffan created: 26.02.2015 */
-public class MapView extends JPanel implements IslandLoadListener {
+public class MapView extends JPanel implements IslandLoadListener, ChangeListener {
 	private static final long serialVersionUID = -7556622085501030441L;
 
 	private ZoomAndPanListener zoomAndPanListener;
@@ -756,6 +757,12 @@ public class MapView extends JPanel implements IslandLoadListener {
 	@Override
 	public void onIslandLoaded(TerrainNode node, BufferedImage islandShape) {
 		islandShapes.put(node.getName(), islandShape);
+		isMapDirty = true;
+		repaint();
+	}
+
+	@Override
+	public void onNotesChanged() {
 		isMapDirty = true;
 		repaint();
 	}
