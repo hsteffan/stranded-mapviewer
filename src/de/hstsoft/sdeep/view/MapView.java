@@ -44,14 +44,16 @@ import de.hstsoft.sdeep.view.ZoomAndPanListener.ZoomPanRotationChangedListener;
 public class MapView extends JPanel implements IslandLoadListener {
 	private static final long serialVersionUID = -7556622085501030441L;
 
-	private TerrainGeneration terrainGeneration;
+	private ZoomAndPanListener zoomAndPanListener;
+	private NoteManager noteManager;
 	private IslandShapeGenerationManager islandShapeGenerationManager;
+	private SaveGame saveGame;
+	private TerrainGeneration terrainGeneration;
 
 	private ConcurrentHashMap<String, Image> islandShapes = new ConcurrentHashMap<>();
 
 	private HashMap<String, ItemImage> images = new HashMap<>();
 	private HashSet<String> doNotDraw = new HashSet<>();
-	private ZoomAndPanListener zoomAndPanListener;
 
 	private boolean showInfo = false;
 	private boolean showGrid = true;
@@ -59,27 +61,16 @@ public class MapView extends JPanel implements IslandLoadListener {
 
 	private boolean initialized = false;
 
+	private AffineTransform defaultTransform = new AffineTransform();
 	private AffineTransform coordTransform;
 	private Point2D mouseOnMap = new Point2D.Float();
-
-	private TerrainNode hoveredTerrainNode;
-
-	private FontMetrics fontMetrics;
-
-	private ItemInfoWindow itemInfoWindow;
-
-	private NoteInfoWindow noteInfoWindow;
-
 	private double rotation = Math.toRadians(45);
 
-	private AffineTransform defaultTransform = new AffineTransform();
-
-	private SaveGame saveGame;
-
-	private NoteManager noteManager;
+	private TerrainNode hoveredTerrainNode;
+	private ItemInfoWindow itemInfoWindow;
+	private NoteInfoWindow noteInfoWindow;
 
 	private BufferedImage bufferedMapImage;
-
 	private boolean isMapDirty;
 
 	/** @author Holger Steffan created: 24.03.2015 */
@@ -253,9 +244,6 @@ public class MapView extends JPanel implements IslandLoadListener {
 		Graphics2D g2 = (Graphics2D) g.create();
 
 		defaultTransform = g2.getTransform();
-		g2.setRenderingHints(new RenderingHints(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_OFF));
-		// g2.setRenderingHints(new RenderingHints(RenderingHints.KEY_INTERPOLATION,
-		// RenderingHints.VALUE_INTERPOLATION_BILINEAR));
 
 		if (bufferedMapImage == null || isMapDirty) {
 			bufferedMapImage = drawMap(getWidth(), getHeight());
@@ -275,6 +263,7 @@ public class MapView extends JPanel implements IslandLoadListener {
 
 		String zoomStr = String.format("zoomLevel: %d", zoomAndPanListener.getZoomLevel());
 		String mapPos = String.format("mapPos: %.1f/%.1f", mouseOnMap.getX(), mouseOnMap.getY());
+		FontMetrics fontMetrics = g2.getFontMetrics();
 		int width = Math.max(fontMetrics.stringWidth(zoomStr), fontMetrics.stringWidth(mapPos));
 		int height = 30;
 		String nodeStr = null;
@@ -322,6 +311,7 @@ public class MapView extends JPanel implements IslandLoadListener {
 
 		BufferedImage image = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
 		Graphics2D g2 = image.createGraphics();
+		g2.setRenderingHints(new RenderingHints(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_OFF));
 
 		g2.setColor(new Color(105, 155, 195));
 		g2.fillRect(0, 0, width, height);
@@ -331,7 +321,6 @@ public class MapView extends JPanel implements IslandLoadListener {
 			initialized = true;
 			final int xc = width / 2;
 			final int yc = height / 2;
-			fontMetrics = g2.getFontMetrics();
 
 			AffineTransform affineTransform = new AffineTransform();
 			affineTransform.translate(xc, yc);
@@ -397,16 +386,32 @@ public class MapView extends JPanel implements IslandLoadListener {
 	}
 
 	private void drawItemInfoWindow(Graphics2D g2, ItemInfoWindow itemInfo) {
+
+		FontMetrics fontMetrics = g2.getFontMetrics();
+		int lineHeight = fontMetrics.getHeight();
+
+		String[] lines = new String[itemInfo.items.size()];
+		int index = 0;
+		for (Entry<String, Integer> entry : itemInfo.items.entrySet()) {
+			lines[index] = entry.getValue().intValue() + "x " + entry.getKey();
+			itemInfo.bounds.width = Math.max(itemInfo.bounds.width, fontMetrics.stringWidth(lines[index]) + 10);
+			index++;
+		}
+
+		itemInfo.bounds.height = (lines.length * lineHeight) + 5;
+
+		// move the window to the left and top of the mouse pointer
+		itemInfo.bounds.x = itemInfo.bounds.x - itemInfo.bounds.width;
+		itemInfo.bounds.y = itemInfo.bounds.y - itemInfo.bounds.height;
+
 		g2.setColor(new Color(0, 0, 0, 150));
 		g2.fill(itemInfo.bounds);
 
-		int lineHeight = fontMetrics.getHeight();
 		int startX = itemInfo.bounds.x + 5;
 		int startY = itemInfo.bounds.y + lineHeight;
 
 		g2.setColor(new Color(0, 0, 0, 200));
 		g2.fillRect(itemInfo.bounds.x - lineHeight - 4, itemInfo.bounds.y, lineHeight + 4, itemInfo.bounds.height);
-		String[] lines = itemInfo.lines;
 		for (int i = 0; i < lines.length; i++) {
 
 			if (images.containsKey(lines[i].split("x ")[1])) {
@@ -423,9 +428,9 @@ public class MapView extends JPanel implements IslandLoadListener {
 	}
 
 	private void drawNoteInfoWindow(Graphics2D g2, NoteInfoWindow info) {
+		FontMetrics fontMetrics = g2.getFontMetrics();
 
 		int lineHeight = fontMetrics.getHeight();
-
 		String lines[] = info.note.getText().split("\n");
 
 		// calculate the width and height
@@ -655,10 +660,8 @@ public class MapView extends JPanel implements IslandLoadListener {
 				if (!nodeBounds.contains(mouseOnMap)) continue;
 
 				hoveredTerrainNode = terrainNode;
-				ArrayList<GameObject> objects = new ArrayList<>();
 
 				TreeMap<String, Integer> objCount = new TreeMap<>();
-
 				Rectangle bounds = new Rectangle();
 				for (GameObject gameObject : hoveredTerrainNode.getChildren()) {
 					Position localPosition = gameObject.getLocalPosition();
@@ -667,7 +670,7 @@ public class MapView extends JPanel implements IslandLoadListener {
 					// TODO resize item bounds with the zoomlevel. smaller size when zoomed in.
 					bounds.setBounds(worldX - 8, worldZ - 8, 16, 16);
 					if (bounds.contains(mouseOnMap)) {
-						objects.add(gameObject);
+						// objects.add(gameObject);
 
 						if (objCount.containsKey(gameObject.getType())) {
 							int intValue = objCount.get(gameObject.getType()).intValue();
@@ -680,20 +683,10 @@ public class MapView extends JPanel implements IslandLoadListener {
 
 				if (!objCount.isEmpty()) {
 					itemInfoWindow = new ItemInfoWindow();
-					itemInfoWindow.lines = new String[objCount.size()];
-					final int lineHeight = fontMetrics.getHeight();
-					final int totalHeight = (lineHeight) * objCount.size();
-					int width = 0;
-					int i = 0;
-					for (Entry<String, Integer> entry : objCount.entrySet()) {
-						itemInfoWindow.lines[i] = entry.getValue().intValue() + "x " + entry.getKey();
-						width = Math.max(width, fontMetrics.stringWidth(itemInfoWindow.lines[i]));
-						i++;
-					}
-					Rectangle infoBounds = new Rectangle(mousePosition.x - width - 15, mousePosition.y - totalHeight - 5,
-							width + 10, totalHeight + 5);
-					itemInfoWindow.bounds = infoBounds;
-					repaint();
+					itemInfoWindow.items = objCount;
+					itemInfoWindow.bounds = new Rectangle(mousePosition);
+
+					// repaint();
 				}
 
 			}
@@ -703,7 +696,7 @@ public class MapView extends JPanel implements IslandLoadListener {
 
 	private class ItemInfoWindow {
 		private Rectangle bounds;
-		private String[] lines;
+		private TreeMap<String, Integer> items;
 	}
 
 	private class NoteInfoWindow {
