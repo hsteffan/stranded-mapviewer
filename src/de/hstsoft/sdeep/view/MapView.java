@@ -401,8 +401,8 @@ public class MapView extends JPanel implements IslandLoadListener {
 		itemInfo.bounds.height = (lines.length * lineHeight) + 5;
 
 		// move the window to the left and top of the mouse pointer
-		itemInfo.bounds.x = itemInfo.bounds.x - itemInfo.bounds.width;
-		itemInfo.bounds.y = itemInfo.bounds.y - itemInfo.bounds.height;
+		itemInfo.bounds.x = itemInfo.position.x - itemInfo.bounds.width;
+		itemInfo.bounds.y = itemInfo.position.y - itemInfo.bounds.height;
 
 		g2.setColor(new Color(0, 0, 0, 150));
 		g2.fill(itemInfo.bounds);
@@ -441,8 +441,8 @@ public class MapView extends JPanel implements IslandLoadListener {
 		info.bounds.height = (lines.length * lineHeight) + lineHeight + 10;
 
 		// move the window to the left and top of the mouse pointer
-		info.bounds.x = info.bounds.x - info.bounds.width;
-		info.bounds.y = info.bounds.y - info.bounds.height;
+		info.bounds.x = info.position.x - info.bounds.width;
+		info.bounds.y = info.position.y - info.bounds.height;
 
 		// draw the background
 		g2.setColor(new Color(0, 0, 0, 150));
@@ -466,12 +466,10 @@ public class MapView extends JPanel implements IslandLoadListener {
 	private void drawNotes(Graphics2D g2, ArrayList<Note> notes) {
 		AffineTransform t = new AffineTransform();
 		for (Note note : notes) {
-
 			AffineTransform originalTransform = g2.getTransform();
 
-			// if (images.containsKey(gameObject.getType())) {
-			double worldX = note.getPosition().getX();
-			double worldZ = note.getPosition().getY();
+			final double worldX = note.getPosition().getX();
+			final double worldZ = note.getPosition().getY();
 
 			ItemImage image = images.get("NOTE");
 
@@ -487,9 +485,7 @@ public class MapView extends JPanel implements IslandLoadListener {
 
 			g2.setColor(Color.DARK_GRAY);
 			g2.drawString(note.getTitle(), 8, 4);
-
 			g2.setTransform(originalTransform);
-
 		}
 	}
 
@@ -602,6 +598,7 @@ public class MapView extends JPanel implements IslandLoadListener {
 		@Override
 		public void mouseClicked(MouseEvent e) {
 			super.mouseClicked(e);
+			if (terrainGeneration == null || !initialized) return;
 
 			Point mousePosition = e.getPoint();
 
@@ -647,11 +644,7 @@ public class MapView extends JPanel implements IslandLoadListener {
 			}
 
 			Note noteAt = noteManager.getNoteAt(mouseOnMap, 16);
-			if (noteAt != null) {
-				noteInfoWindow = new NoteInfoWindow();
-				noteInfoWindow.note = noteAt;
-				noteInfoWindow.bounds = new Rectangle(mousePosition);
-			}
+			if (noteAt != null) noteInfoWindow = new NoteInfoWindow(mousePosition, noteAt);
 
 			ArrayList<TerrainNode> terrainNodes = terrainGeneration.getTerrainNodes();
 			for (TerrainNode terrainNode : terrainNodes) {
@@ -661,7 +654,7 @@ public class MapView extends JPanel implements IslandLoadListener {
 
 				hoveredTerrainNode = terrainNode;
 
-				TreeMap<String, Integer> objCount = new TreeMap<>();
+				TreeMap<String, Integer> items = new TreeMap<>();
 				Rectangle bounds = new Rectangle();
 				for (GameObject gameObject : hoveredTerrainNode.getChildren()) {
 					Position localPosition = gameObject.getLocalPosition();
@@ -670,24 +663,16 @@ public class MapView extends JPanel implements IslandLoadListener {
 					// TODO resize item bounds with the zoomlevel. smaller size when zoomed in.
 					bounds.setBounds(worldX - 8, worldZ - 8, 16, 16);
 					if (bounds.contains(mouseOnMap)) {
-						// objects.add(gameObject);
-
-						if (objCount.containsKey(gameObject.getType())) {
-							int intValue = objCount.get(gameObject.getType()).intValue();
-							objCount.put(gameObject.getType(), intValue + 1);
+						if (items.containsKey(gameObject.getType())) {
+							final int intValue = items.get(gameObject.getType()).intValue();
+							items.put(gameObject.getType(), intValue + 1);
 						} else {
-							objCount.put(gameObject.getType(), 1);
+							items.put(gameObject.getType(), 1);
 						}
 					}
 				}
 
-				if (!objCount.isEmpty()) {
-					itemInfoWindow = new ItemInfoWindow();
-					itemInfoWindow.items = objCount;
-					itemInfoWindow.bounds = new Rectangle(mousePosition);
-
-					// repaint();
-				}
+				if (!items.isEmpty()) itemInfoWindow = new ItemInfoWindow(mousePosition, items);
 
 			}
 			repaint();
@@ -695,13 +680,25 @@ public class MapView extends JPanel implements IslandLoadListener {
 	}
 
 	private class ItemInfoWindow {
-		private Rectangle bounds;
+		private Point position;
+		private Rectangle bounds = new Rectangle();
 		private TreeMap<String, Integer> items;
+
+		public ItemInfoWindow(Point position, TreeMap<String, Integer> items) {
+			this.position = position;
+			this.items = items;
+		}
 	}
 
 	private class NoteInfoWindow {
-		private Rectangle bounds;
+		private Point position;
+		private Rectangle bounds = new Rectangle();
 		private Note note;
+
+		public NoteInfoWindow(Point position, Note noteAt) {
+			this.position = position;
+			this.note = noteAt;
+		}
 	}
 
 	private void setTerrainGeneration(TerrainGeneration terrainGeneration) {
