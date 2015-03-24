@@ -28,28 +28,37 @@ public class NoteManager {
 	private static final String FILENAME = "notes.json";
 	private static final int VERSION = 1;
 
+	public interface ChangeListener {
+		void onNotesChanged();
+	}
+
 	private String directory;
 	private ArrayList<Note> notes = new ArrayList<>();
+	private ChangeListener listener;
 
 	/** @param worldSeed */
-	public NoteManager(int worldSeed) {
+	public NoteManager(int worldSeed, ChangeListener listener) {
+		this.listener = listener;
 		directory = "worlds/" + worldSeed + "/";
 	}
 
 	public void addNote(Note note) {
 		notes.add(note);
 		saveNotes();
+		if (listener != null) listener.onNotesChanged();
 	}
 
 	/** @param note */
 	public void updateNote(Note note) {
 		// TODO implement updateing a Note.
 		saveNotes();
+		if (listener != null) listener.onNotesChanged();
 	}
 
 	public void remove(Note note) {
 		notes.remove(note);
 		saveNotes();
+		if (listener != null) listener.onNotesChanged();
 	}
 
 	public Note getNoteAt(Point2D mapPosition, int size) {

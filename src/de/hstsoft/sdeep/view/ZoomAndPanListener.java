@@ -17,11 +17,21 @@ import java.awt.geom.Point2D;
 
 /** @author Holger Steffan created: 28.02.2015 */
 public class ZoomAndPanListener implements MouseListener, MouseMotionListener, MouseWheelListener {
+
+	public interface ZoomPanRotationChangedListener {
+		void onRotationChanged(ZoomAndPanListener source);
+
+		void onPanChanged(ZoomAndPanListener source);
+
+		void onZoomChanged(ZoomAndPanListener source);
+	}
+
 	public static final int DEFAULT_MIN_ZOOM_LEVEL = -10;
 	public static final int DEFAULT_MAX_ZOOM_LEVEL = 20;
 	public static final double DEFAULT_ZOOM_MULTIPLICATION_FACTOR = 1.2;
 
 	private Component targetComponent;
+	private ZoomPanRotationChangedListener listener;
 
 	private int zoomLevel = 0;
 	private int minZoomLevel = DEFAULT_MIN_ZOOM_LEVEL;
@@ -43,6 +53,10 @@ public class ZoomAndPanListener implements MouseListener, MouseMotionListener, M
 		this.minZoomLevel = minZoomLevel;
 		this.maxZoomLevel = maxZoomLevel;
 		this.zoomMultiplicationFactor = zoomMultiplicationFactor;
+	}
+
+	public void setListener(ZoomPanRotationChangedListener listener) {
+		this.listener = listener;
 	}
 
 	public void mouseClicked(MouseEvent e) {
@@ -89,10 +103,10 @@ public class ZoomAndPanListener implements MouseListener, MouseMotionListener, M
 
 			double dx = e.getPoint().getX() - lastDragScreen.getX();
 			double angle = dx * 0.1f;
-			// System.out.println(dx + " angle:" + Math.toDegrees(angle));
 			coordTransform.rotate(Math.toRadians(angle));
-
 			coordTransform.translate(-anchor.x, -anchor.y);
+
+			if (this.listener != null) this.listener.onRotationChanged(this);
 
 			targetComponent.repaint();
 		} catch (NoninvertibleTransformException e1) {
@@ -110,6 +124,7 @@ public class ZoomAndPanListener implements MouseListener, MouseMotionListener, M
 			coordTransform.translate(dx, dy);
 			dragStartScreen = dragEndScreen;
 			dragEndScreen = null;
+			if (this.listener != null) this.listener.onPanChanged(this);
 			targetComponent.repaint();
 		} catch (NoninvertibleTransformException ex) {
 			ex.printStackTrace();
@@ -127,6 +142,7 @@ public class ZoomAndPanListener implements MouseListener, MouseMotionListener, M
 					coordTransform.scale(1 / zoomMultiplicationFactor, 1 / zoomMultiplicationFactor);
 					Point2D p2 = transformPoint(p);
 					coordTransform.translate(p2.getX() - p1.getX(), p2.getY() - p1.getY());
+					if (this.listener != null) this.listener.onZoomChanged(this);
 					targetComponent.repaint();
 				}
 			} else {
@@ -136,6 +152,7 @@ public class ZoomAndPanListener implements MouseListener, MouseMotionListener, M
 					coordTransform.scale(zoomMultiplicationFactor, zoomMultiplicationFactor);
 					Point2D p2 = transformPoint(p);
 					coordTransform.translate(p2.getX() - p1.getX(), p2.getY() - p1.getY());
+					if (this.listener != null) this.listener.onZoomChanged(this);
 					targetComponent.repaint();
 				}
 			}
