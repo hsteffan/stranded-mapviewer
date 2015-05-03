@@ -393,7 +393,7 @@ public class MapView extends JPanel implements IslandLoadListener, ChangeListene
 			g2.drawString(str, width / 2 - w / 2, height / 2);
 
 			g2.setFont(new Font("Arial", Font.ITALIC, 14));
-			str = "(The save game file can be found at <Stranded Deep installation folder>\\Stranded_Deep_x64_Data\\Data\\Save.json)";
+			str = "(The save game file can be found at <Stranded Deep installation folder>\\Stranded_Deep_x64_Data\\Data\\<SteamID>\\<SteamID>.json)";
 			w = g2.getFontMetrics().stringWidth(str);
 			g2.drawString(str, width / 2 - w / 2, height / 2 + 20);
 			g2.setFont(saveFont);

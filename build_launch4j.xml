@@ -2,8 +2,8 @@
 <launch4jConfig>
   <dontWrapJar>false</dontWrapJar>
   <headerType>gui</headerType>
-  <jar>C:\Projects\stranded-mapviewer\build\mapViewer.jar</jar>
-  <outfile>C:\Projects\stranded-mapviewer\build\MapViewer\MapViewer.exe</outfile>
+  <jar>D:\mapviewer.jar</jar>
+  <outfile>d:\MapViewer.exe</outfile>
   <errTitle></errTitle>
   <cmdLine></cmdLine>
   <chdir>.</chdir>
@@ -13,7 +13,7 @@
   <stayAlive>false</stayAlive>
   <restartOnCrash>false</restartOnCrash>
   <manifest></manifest>
-  <icon>C:\Projects\stranded-mapviewer\images\mapViewer.ico</icon>
+  <icon>D:\Projects\stranded-mapviewer\images\mapViewer.ico</icon>
   <jre>
     <path></path>
     <bundledJre64Bit>false</bundledJre64Bit>
