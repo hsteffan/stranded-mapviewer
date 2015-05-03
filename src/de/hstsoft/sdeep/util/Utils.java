@@ -8,18 +8,22 @@ package de.hstsoft.sdeep.util;
 public class Utils {
 
 	public static float toFloat(String str) {
-		if (!str.startsWith("~f")) throw new NumberFormatException("Can't convert '" + str + "' to float");
-		return Float.parseFloat(str.substring(2));
+		if (str.startsWith("~f"))
+			return Float.parseFloat(str.substring(2));
+		return Float.parseFloat(str);
 	}
 
 	public static int toInt(String str) {
-		if (!str.startsWith("~i")) throw new NumberFormatException("Can't convert '" + str + "' to int");
-		return Integer.parseInt(str.substring(2));
+		if (str.startsWith("~i"))
+			return Integer.parseInt(str.substring(2));
+		return Integer.parseInt(str);
 	}
 
 	public static boolean toBool(String str) {
-		if (!str.toLowerCase().equals("false") && !str.toLowerCase().equals("true"))
-			throw new NumberFormatException("Can't convert '" + str + "' to bool");
+		if (!str.toLowerCase().equals("false")
+				&& !str.toLowerCase().equals("true"))
+			throw new NumberFormatException("Can't convert '" + str
+					+ "' to bool");
 		return Boolean.parseBoolean(str);
 	}
 
