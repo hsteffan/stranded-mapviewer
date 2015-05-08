@@ -689,7 +689,11 @@ public class MapView extends JPanel implements IslandLoadListener, ChangeListene
 				TreeMap<String, Integer> items = new TreeMap<>();
 				Rectangle bounds = new Rectangle();
 				for (GameObject gameObject : hoveredTerrainNode.getChildren()) {
+					//don't show animal popup when option is not set.
+					if(!showAnimals && isAnimal(gameObject.getType())) continue;
+
 					Position localPosition = gameObject.getLocalPosition();
+					
 					final int worldX = (int) (positionOffset.x - localPosition.x);
 					final int worldZ = (int) (positionOffset.z - localPosition.z);
 					// TODO resize item bounds with the zoomlevel. smaller size when zoomed in.
