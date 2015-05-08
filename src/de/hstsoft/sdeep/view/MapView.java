@@ -57,10 +57,12 @@ public class MapView extends JPanel implements IslandLoadListener, ChangeListene
 
 	private HashMap<String, ItemImage> images = new HashMap<>();
 	private HashSet<String> doNotDraw = new HashSet<>();
+	private HashSet<String> animals = new HashSet<>();
 
 	private boolean showInfo = false;
 	private boolean showGrid = true;
 	private boolean showNotes = true;
+	private boolean showAnimals = false;
 
 	private boolean initialized = false;
 
@@ -237,6 +239,15 @@ public class MapView extends JPanel implements IslandLoadListener, ChangeListene
 		doNotDraw.add(ItemTypes.TOOLBOX_1);
 		doNotDraw.add(ItemTypes.WALL_CABINET_1);
 		doNotDraw.add(ItemTypes.SEA_FORT_BRIDGE);
+		
+		// animals
+		animals.add(ItemTypes.SHARK_TIGER);
+		animals.add(ItemTypes.SHARK_REEF);
+		animals.add(ItemTypes.SHARK_WHITE);
+		animals.add(ItemTypes.MARLIN);
+		animals.add(ItemTypes.GREEN_SEA_TURTLE);
+		animals.add(ItemTypes.STING_RAY);
+		animals.add(ItemTypes.WHALE);
 
 	}
 
@@ -556,6 +567,7 @@ public class MapView extends JPanel implements IslandLoadListener, ChangeListene
 			for (GameObject gameObject : children) {
 
 				if (doNotDraw.contains(gameObject.getType())) continue;
+				if (!showAnimals && isAnimal(gameObject.getType())) continue;
 
 				Position localPosition = gameObject.getLocalPosition();
 				final int worldX = (int) (nodeWorldX - localPosition.x);
@@ -608,6 +620,10 @@ public class MapView extends JPanel implements IslandLoadListener, ChangeListene
 				g2.setTransform(originalTransform);
 			}
 		}
+	}
+
+	private boolean isAnimal(String type) {
+		return animals.contains(type);
 	}
 
 	private class MouseClickListener extends MouseAdapter {
@@ -759,6 +775,16 @@ public class MapView extends JPanel implements IslandLoadListener, ChangeListene
 
 	public void setShowNotes(boolean showNotes) {
 		this.showNotes = showNotes;
+		isMapDirty = true;
+		repaint();
+	}
+
+	public boolean isShowAnimals() {
+		return this.showAnimals;
+	}
+	
+	public void setShowAnimals(boolean showAnimals) {
+		this.showAnimals = showAnimals;
 		isMapDirty = true;
 		repaint();
 	}

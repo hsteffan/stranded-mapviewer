@@ -189,6 +189,16 @@ public class MainWindow extends JFrame {
 		});
 		menuItemNotes.setSelected(mapView.isShowNotes());
 		mnView.add(menuItemNotes);
+		
+		final JCheckBoxMenuItem menuItemAnimals = new JCheckBoxMenuItem("ShowAnimals");
+		menuItemAnimals.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				boolean showAnimals = menuItemAnimals.isSelected();
+				mapView.setShowAnimals(showAnimals);
+			}
+		});
+		menuItemAnimals.setSelected(mapView.isShowAnimals());
+		mnView.add(menuItemAnimals);
 
 		mnView.addSeparator();
 
